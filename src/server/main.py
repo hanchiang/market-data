@@ -8,6 +8,10 @@ app = FastAPI()
 
 options_api = BarChartAPI().options
 
+@app.get("/healthz")
+async def options_for_ticker():
+    return {'data': 'market data is running!'}
+
 @app.get("/options/{symbol}")
 async def options_for_ticker(
     symbol: str, order_dir = '', expiration_type = '', expiration_date: Optional[date] = None,
