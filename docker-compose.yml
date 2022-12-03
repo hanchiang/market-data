@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+        context: .
+        target: dev
+        dockerfile: Dockerfile
+    image: market-data:dev
+    command: uvicorn --reload --app-dir src/server --host 0.0.0.0 main:app
+    volumes:
+      - .:/app
+      - venv
+      - id_rsa
+    ports:
+      - 8000:8000
