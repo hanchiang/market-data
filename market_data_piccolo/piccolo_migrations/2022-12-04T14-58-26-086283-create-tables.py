@@ -1,15 +1,5 @@
-import piccolo.table
 from piccolo.apps.migrations.auto.migration_manager import MigrationManager
-from piccolo.columns.base import OnDelete
-from piccolo.columns.base import OnUpdate
-from piccolo.columns.column_types import Date, Timestamptz
-from piccolo.columns.column_types import ForeignKey
-from piccolo.columns.column_types import Integer
-from piccolo.columns.column_types import Numeric
-from piccolo.columns.column_types import Varchar
-from piccolo.columns.indexes import IndexMethod
 from piccolo.table import Table
-import decimal
 
 
 ID = "2022-12-04T14:58:26:086283"
@@ -21,471 +11,86 @@ option_price_precision = (6, 3)
 option_aggregate_stat_precision = (10, 8)
 option_greek_precision = (9, 8)
 
-class StockTicker(Table):
-    symbol = Varchar(10, primary_key=True)
-    name = Varchar(255)
-
-class StockTickerPrice(Table):
-    symbol = ForeignKey(references=StockTicker, on_update=OnUpdate.cascade, on_delete=OnDelete.no_action)
-    date = Date()
-    open_price = Numeric(digits=stock_price_precision)
-    high_price = Numeric(digits=stock_price_precision)
-    low_price = Numeric(digits=stock_price_precision)
-    close_price = Numeric(digits=stock_price_precision)
-    volume = Integer()
-
-class OptionPrice(Table):
-    symbol: Varchar(100)
-    base_symbol: ForeignKey(references=StockTicker, on_update=OnUpdate.cascade, on_delete=OnDelete.no_action)
-    trade_time: Timestamptz()
-    option_type: Varchar(4, help_text='put or call')
-    strike_price: Numeric(digits=stock_price_precision)
-    open_price: Numeric(digits=option_price_precision)
-    high_price: Numeric(digits=option_price_precision)
-    low_price: Numeric(digits=option_price_precision)
-    last_price: Numeric(digits=option_price_precision)
-    moneyness: Numeric(digits=option_aggregate_stat_precision)
-    bid_price: Numeric(digits=option_price_precision)
-    ask_price: Numeric(digits=option_price_precision)
-    mid_price: Numeric(digits=option_price_precision)
-    volume: Integer()
-    open_interest: Integer()
-    volatility: Numeric(digits=option_aggregate_stat_precision)
-    expiration_date: Date()
-    expiration_type: Varchar(6, help_text='weekly or monthly')
-    average_volatility: Numeric(digits=option_aggregate_stat_precision)
-    delta: Numeric(digits=option_greek_precision)
-    theta: Numeric(digits=option_greek_precision)
-    gamma: Numeric(digits=option_greek_precision)
-    vega: Numeric(digits=option_greek_precision)
-    rho: Numeric(digits=option_greek_precision)
+# dummy table to execute raw SQL
+class RawTable(Table):
+    pass
 
 async def forwards():
     manager = MigrationManager(
         migration_id=ID, app_name="market_data_piccolo", description=DESCRIPTION
     )
-    def create_stock_ticker(manager: MigrationManager):
-        manager.add_table('StockTicker', tablename='stock_ticker')
-        manager.add_column(
-            table_class_name="StockTicker",
-            tablename="stock_ticker",
-            column_name="symbol",
-            db_column_name="symbol",
-            column_class_name="Varchar",
-            column_class=Varchar,
-            params={
-                "length": 10,
-                "null": False,
-                "primary_key": True,
-                # "index": True,
-                # "index_method": IndexMethod.btree,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTicker",
-            tablename="stock_ticker",
-            column_name="name",
-            db_column_name="name",
-            column_class_name="Varchar",
-            column_class=Varchar,
-            params={
-                "length": 255,
-                "null": False,
-            },
-        )
+    async def create_stock_ticker():
+        script = '''
+        CREATE TABLE IF NOT EXISTS stock_ticker
+        (
+            symbol character varying(10) NOT NULL DEFAULT '',
+            name character varying(255) NOT NULL DEFAULT '',
+            CONSTRAINT stock_ticker_pkey PRIMARY KEY (symbol)
+        );
+        '''
+        await RawTable.raw(script)
 
-    def create_stock_ticker_price(manager: MigrationManager):
-        manager.add_table('StockTickerPrice', tablename='stock_ticker_price')
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="symbol",
-            db_column_name="symbol",
-            column_class_name="Varchar",
-            column_class=Varchar,
-            params={
-                "references": StockTicker,
-                "on_delete": OnDelete.no_action,
-                "on_update": OnUpdate.cascade,
-                "target_column": None,
-                "null": False,
-                # "index": True,
-                # "index_method": IndexMethod.btree
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="date",
-            db_column_name="date",
-            column_class_name="Date",
-            column_class=Date,
-            params={
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="open_price",
-            db_column_name="open_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "default": decimal.Decimal("0"),
-                "digits": stock_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice", tablename="stock_ticker_price",
-            column_name="high_price",
-            db_column_name="high_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "default": decimal.Decimal("0"),
-                "digits": stock_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="low_price",
-            db_column_name="low_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "default": decimal.Decimal("0"),
-                "digits": stock_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="close_price",
-            db_column_name="close_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": stock_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="volume",
-            db_column_name="volume",
-            column_class_name="Integer",
-            column_class=Integer,
-            params={
-                "null": False,
-            },
-        )
+    async def create_stock_ticker_price():
+        script = '''
+        CREATE TABLE IF NOT EXISTS stock_ticker_price
+        (
+            symbol character varying(255) NOT NULL DEFAULT '',
+            date date NOT NULL DEFAULT CURRENT_DATE,
+            open_price numeric(12,5) NOT NULL DEFAULT 0,
+            high_price numeric(12,5) NOT NULL DEFAULT 0,
+            low_price numeric(12,5) NOT NULL DEFAULT 0,
+            close_price numeric(12,5) NOT NULL DEFAULT 0,
+            volume integer NOT NULL DEFAULT 0,
+            open_interest integer NOT NULL DEFAULT 0,
+            CONSTRAINT symbol_date_uq UNIQUE (symbol, date),
+            CONSTRAINT symbol_fk FOREIGN KEY (symbol) REFERENCES stock_ticker(symbol) ON UPDATE CASCADE ON DELETE NO ACTION
+        );
+        '''
+        await RawTable.raw(script)
+        await RawTable.raw("SELECT create_hypertable('stock_ticker_price', 'date')")
 
-    def create_option_price(manager: MigrationManager):
-        manager.add_table('OptionPrice', tablename='option_price')
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="symbol",
-            db_column_name="symbol",
-            column_class_name="Varchar",
-            column_class=Varchar,
-            params={
-                "length": 100,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="base_symbol",
-            db_column_name="base_symbol",
-            column_class_name="Varchar",
-            column_class=Varchar,
-            params={
-                "references": StockTicker,
-                "on_delete": OnDelete.no_action,
-                "on_update": OnUpdate.cascade,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="trade_time",
-            db_column_name="trade_time",
-            column_class_name="Timestamptz",
-            column_class=Timestamptz,
-            params={
-                "null": False,
-                # "index": True,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="option_type",
-            db_column_name="option_type",
-            column_class_name="Varchar",
-            column_class=Varchar,
-            params={
-                "length": 4,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="strike_price",
-            db_column_name="strike_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": stock_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="open_price",
-            db_column_name="open_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="high_price",
-            db_column_name="high_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="low_price",
-            db_column_name="low_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="last_price",
-            db_column_name="last_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="moneyness",
-            db_column_name="moneyness",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_aggregate_stat_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="bid_price",
-            db_column_name="bid_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="ask_price",
-            db_column_name="ask_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="mid_price",
-            db_column_name="mid_price",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_price_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="volume",
-            db_column_name="volume",
-            column_class_name="Integer",
-            column_class=Integer,
-            params={
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="StockTickerPrice",
-            tablename="stock_ticker_price",
-            column_name="open_interest",
-            db_column_name="open_interest",
-            column_class_name="Integer",
-            column_class=Integer,
-            params={
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="volatility",
-            db_column_name="volatility",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_aggregate_stat_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="expiration_date",
-            db_column_name="expiration_date",
-            column_class_name="Date",
-            column_class=Date,
-            params={
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="expiration_type",
-            db_column_name="expiration_type",
-            column_class_name="Varchar",
-            column_class=Varchar,
-            params={
-                "length": 6,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="average_volatility",
-            db_column_name="average_volatility",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_aggregate_stat_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="delta",
-            db_column_name="delta",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_greek_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="theta",
-            db_column_name="theta",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_greek_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="gamma",
-            db_column_name="gamma",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_greek_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="vega",
-            db_column_name="vega",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_greek_precision,
-                "null": False,
-            },
-        )
-        manager.add_column(
-            table_class_name="OptionPrice",
-            tablename="option_price",
-            column_name="rho",
-            db_column_name="rho",
-            column_class_name="Numeric",
-            column_class=Numeric,
-            params={
-                "digits": option_greek_precision,
-                "null": False,
-            },
-        )
-    def run():
-        create_stock_ticker(manager)
-        create_stock_ticker_price(manager)
-        create_option_price(manager)
+    async def create_option_price():
+        script = '''
+        CREATE TABLE IF NOT EXISTS option_price
+        (
+            symbol character varying(100) NOT NULL,
+            base_symbol character varying(255) NOT NULL,
+            trade_time timestamp with time zone NOT NULL,
+            option_type character varying(4) NOT NULL,
+            strike_price numeric(12,5) NOT NULL,
+            open_price numeric(6,3) NOT NULL,
+            high_price numeric(6,3) NOT NULL,
+            low_price numeric(6,3) NOT NULL,
+            last_price numeric(6,3) NOT NULL,
+            moneyness numeric(10,8) NOT NULL,
+            bid_price numeric(6,3) NOT NULL,
+            ask_price numeric(6,3) NOT NULL,
+            mid_price numeric(6,3) NOT NULL,
+            volatility numeric(10,8) NOT NULL,
+            expiration_date date NOT NULL,
+            expiration_type character varying(6) NOT NULL,
+            average_volatility numeric(10,8) NOT NULL,
+            delta numeric(9,8) NOT NULL,
+            theta numeric(9,8) NOT NULL,
+            gamma numeric(9,8) NOT NULL,
+            vega numeric(9,8) NOT NULL,
+            rho numeric(9,8) NOT NULL,
+            CONSTRAINT symbol_trade_time_expiration_date_strike_price_option_type_uq UNIQUE (symbol, trade_time, expiration_date, strike_price, option_type),
+            CONSTRAINT base_symbol_fk FOREIGN KEY (base_symbol) REFERENCES stock_ticker(symbol) ON UPDATE CASCADE ON DELETE NO ACTION
+        );
+        '''
+        await RawTable.raw(script)
+        await RawTable.raw("SELECT create_hypertable('option_price', 'trade_time')")
 
-        # For some reason, columns for OptionPrice table are not created if tables are created with piccolo.table.create_db_tables_sync
-        # piccolo.table.create_db_tables_sync(StockTicker, StockTickerPrice, OptionPrice)
+    async def run():
+        await create_stock_ticker()
+        await create_stock_ticker_price()
+        await create_option_price()
 
-    def run_backwards():
-        # For some reason, columns tables class name can't find found when tables are dropped with manager
-        piccolo.table.drop_db_tables_sync(StockTicker, StockTickerPrice, OptionPrice)
+    async def run_backwards():
+        await RawTable.raw('DROP TABLE option_price')
+        await RawTable.raw('DROP TABLE stock_ticker_price')
+        await RawTable.raw('DROP TABLE stock_ticker')
 
     manager.add_raw(run)
     manager.add_raw_backwards(run_backwards)

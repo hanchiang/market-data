@@ -19,10 +19,6 @@ class StockTickerPrice(Table):
     close_price = Numeric(digits=stock_price_precision)
     volume = Integer()
 
-# class Option(Table):
-#     symbol: Varchar(100, primary_key=True)
-#     base_symbol: ForeignKey(references=StockTicker, on_update=OnUpdate.cascade, on_delete=OnDelete.no_action)
-
 class OptionPrice(Table):
     symbol: Varchar(100)
     base_symbol: ForeignKey(references=StockTicker, on_update=OnUpdate.cascade, on_delete=OnDelete.no_action)
