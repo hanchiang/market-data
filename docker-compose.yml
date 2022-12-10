@@ -6,11 +6,32 @@ services:
         context: .
         target: dev
         dockerfile: Dockerfile
+        args:
+          BARCHART_API_TAG: 0.1.3
     image: market-data:dev
     command: uvicorn --reload --app-dir src/server --host 0.0.0.0 main:app
+    depends_on:
+      - db
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: market_data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_PORT: 5432
     volumes:
       - .:/app
-      - venv
-      - id_rsa
+      - /app/venv
     ports:
       - 8000:8000
+  db:
+    image: timescale/timescaledb-ha:pg14-latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: market_data
+    volumes:
+      - db-volume:/home/postgres/pgdata/data
+    ports:
+      - 5432:5432
+volumes:
+  db-volume:

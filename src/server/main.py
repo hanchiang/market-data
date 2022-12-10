@@ -4,12 +4,31 @@ from typing import Optional
 
 from barchart_api import BarChartAPI
 
+import subprocess
+import os
+import asyncio
+
 app = FastAPI()
 
 options_api = BarChartAPI().options
 
+async def run_migration():
+    print('Running postgres migration scripts. Wait 5 seconds for timescale db to be ready')
+    await asyncio.sleep(5)
+    result = subprocess.run('piccolo migrations forwards market_data_piccolo --trace', cwd=os.getcwd(), timeout=30,
+                            shell=True, capture_output=True)
+    print(result)
+    print(f'stdout: {result.stdout}')
+    if result.stderr:
+        print(f'stderr: {result.stderr}')
+
+@app.on_event("startup")
+async def startup_event():
+    print('FastAPI startup event')
+    await run_migration()
+
 @app.get("/healthz")
-async def options_for_ticker():
+async def health_check():
     return {'data': 'market data is running!'}
 
 @app.get("/options/{symbol}")
