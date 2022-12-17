@@ -32,7 +32,7 @@ async def forwards():
             (symbol ASC NULLS LAST, date ASC NULLS LAST);
             ''')
 
-    async def create_option_price():
+    async def create_option_price_index():
         await RawTable.raw('''
             CREATE INDEX IF NOT EXISTS option_price_base_symbol
             ON option_price USING btree
@@ -59,21 +59,28 @@ async def forwards():
             (base_symbol ASC NULLS LAST, trade_time ASC NULLS LAST);
             ''')
 
-    async def run():
-        await create_stock_ticker_index()
-        await create_stock_ticker_price_index()
-        await create_option_price()
-
-    async def run_backwards():
+    async def delete_stock_ticker_index():
         await RawTable.raw('DROP INDEX IF EXISTS stock_ticker_symbol;')
 
+    async def delete_stock_ticker_price_index():
         await RawTable.raw('DROP INDEX IF EXISTS stock_ticker_price_symbol_date;')
 
+    async def delete_option_price_index():
         await RawTable.raw('DROP INDEX IF EXISTS option_price_base_symbol;')
         await RawTable.raw('DROP INDEX IF EXISTS option_price_base_symbol_expiration_date;')
         await RawTable.raw('DROP INDEX IF EXISTS option_price_base_symbol_option_type;')
         await RawTable.raw('DROP INDEX IF EXISTS option_price_base_symbol_strike_price;')
         await RawTable.raw('DROP INDEX IF EXISTS option_price_base_symbol_trade_time;')
+
+    async def run():
+        await create_stock_ticker_index()
+        await create_stock_ticker_price_index()
+        await create_option_price_index()
+
+    async def run_backwards():
+        await delete_stock_ticker_index()
+        await delete_stock_ticker_price_index()
+        await delete_option_price_index()
 
     manager.add_raw(run)
     manager.add_raw_backwards(run_backwards)

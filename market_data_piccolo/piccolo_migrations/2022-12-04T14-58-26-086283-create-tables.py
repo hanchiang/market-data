@@ -1,6 +1,6 @@
 from piccolo.apps.migrations.auto.migration_manager import MigrationManager
 from piccolo.table import Table
-
+from market_data_piccolo.tables import StockTickerPrice, OptionPrice, StockTicker
 
 ID = "2022-12-04T14:58:26:086283"
 VERSION = "0.99.0"
@@ -15,72 +15,37 @@ option_greek_precision = (9, 8)
 class RawTable(Table):
     pass
 
+# For some reason, creating tables with pure SQL result in the piccolo table having only an id column...
 async def forwards():
     manager = MigrationManager(
         migration_id=ID, app_name="market_data_piccolo", description=DESCRIPTION
     )
     async def create_stock_ticker():
-        script = '''
-        CREATE TABLE IF NOT EXISTS stock_ticker
-        (
-            symbol character varying(10) NOT NULL DEFAULT '',
-            name character varying(255) NOT NULL DEFAULT '',
-            CONSTRAINT stock_ticker_pkey PRIMARY KEY (symbol)
-        );
-        '''
-        await RawTable.raw(script)
+        print(await StockTicker.create_table())
 
     async def create_stock_ticker_price():
-        script = '''
-        CREATE TABLE IF NOT EXISTS stock_ticker_price
-        (
-            symbol character varying(255) NOT NULL DEFAULT '',
-            date date NOT NULL DEFAULT CURRENT_DATE,
-            open_price numeric(12,5) NOT NULL DEFAULT 0,
-            high_price numeric(12,5) NOT NULL DEFAULT 0,
-            low_price numeric(12,5) NOT NULL DEFAULT 0,
-            close_price numeric(12,5) NOT NULL DEFAULT 0,
-            volume integer NOT NULL DEFAULT 0,
-            open_interest integer NOT NULL DEFAULT 0,
-            CONSTRAINT symbol_date_uq UNIQUE (symbol, date),
-            CONSTRAINT symbol_fk FOREIGN KEY (symbol) REFERENCES stock_ticker(symbol) ON UPDATE CASCADE ON DELETE NO ACTION
-        );
-        '''
-        await RawTable.raw(script)
-        await RawTable.raw("SELECT create_hypertable('stock_ticker_price', 'date')")
+        await StockTickerPrice.create_table()
+        # HACK: remove default id primary key, then recreate primary key with id and date
+        # 1. Because piccolo forces us to create a primary key
+        # 2. However any primary key or unique index in timescale db needs to include the partition column(date)
+        await RawTable.raw('ALTER TABLE stock_ticker_price DROP CONSTRAINT stock_ticker_price_pkey;')
+        await RawTable.raw('ALTER TABLE stock_ticker_price ADD PRIMARY KEY (id, date);')
+
+        await RawTable.raw("CREATE UNIQUE INDEX stock_ticker_price_sym_date_uq ON stock_ticker_price(symbol, date);")
+        print(await RawTable.raw("SELECT create_hypertable('stock_ticker_price', 'date');"))
 
     async def create_option_price():
-        script = '''
-        CREATE TABLE IF NOT EXISTS option_price
-        (
-            symbol character varying(100) NOT NULL,
-            base_symbol character varying(255) NOT NULL,
-            trade_time timestamp with time zone NOT NULL,
-            option_type character varying(4) NOT NULL,
-            strike_price numeric(12,5) NOT NULL,
-            open_price numeric(6,3) NOT NULL,
-            high_price numeric(6,3) NOT NULL,
-            low_price numeric(6,3) NOT NULL,
-            last_price numeric(6,3) NOT NULL,
-            moneyness numeric(10,8) NOT NULL,
-            bid_price numeric(6,3) NOT NULL,
-            ask_price numeric(6,3) NOT NULL,
-            mid_price numeric(6,3) NOT NULL,
-            volatility numeric(10,8) NOT NULL,
-            expiration_date date NOT NULL,
-            expiration_type character varying(6) NOT NULL,
-            average_volatility numeric(10,8) NOT NULL,
-            delta numeric(9,8) NOT NULL,
-            theta numeric(9,8) NOT NULL,
-            gamma numeric(9,8) NOT NULL,
-            vega numeric(9,8) NOT NULL,
-            rho numeric(9,8) NOT NULL,
-            CONSTRAINT symbol_trade_time_expiration_date_strike_price_option_type_uq UNIQUE (symbol, trade_time, expiration_date, strike_price, option_type),
-            CONSTRAINT base_symbol_fk FOREIGN KEY (base_symbol) REFERENCES stock_ticker(symbol) ON UPDATE CASCADE ON DELETE NO ACTION
-        );
-        '''
-        await RawTable.raw(script)
-        await RawTable.raw("SELECT create_hypertable('option_price', 'trade_time')")
+        await OptionPrice.create_table()
+
+        # HACK: remove default id primary key, then recreate primary key with id and date
+        # 1. Because piccolo forces us to create a primary key
+        # 2. However any primary key or unique index in timescale db needs to include the partition column(trade_time)
+        await RawTable.raw('ALTER TABLE option_price DROP CONSTRAINT option_price_pkey;')
+        await RawTable.raw('ALTER TABLE option_price ADD PRIMARY KEY (id, trade_time);')
+
+        await RawTable.raw(
+            "CREATE UNIQUE INDEX option_price_sym_tradetime_exdate_strike_opt_type_uq ON option_price(symbol, trade_time, expiration_date, strike_price, option_type);")
+        print(await RawTable.raw("SELECT create_hypertable('option_price', 'trade_time')"))
 
     async def run():
         await create_stock_ticker()
