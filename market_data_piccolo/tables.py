@@ -72,7 +72,7 @@ class OptionPrice(Table, tablename="option_price"):
         secret=False,
     )
     trade_time = Timestamptz(
-        null=False,  # dirty data
+        null=False,
         primary_key=False,
         unique=False,
         index=False,
@@ -160,7 +160,7 @@ class OptionPrice(Table, tablename="option_price"):
         db_column_name=None,
         secret=False,
     )
-    mid_point = Numeric(
+    midpoint = Numeric(
         digits=option_price_precision,
         null=False,
         primary_key=False,
@@ -190,16 +190,6 @@ class OptionPrice(Table, tablename="option_price"):
         secret=False,
     )
     open_interest = Integer(
-        null=False,
-        primary_key=False,
-        unique=False,
-        index=False,
-        index_method=IndexMethod.btree,
-        db_column_name=None,
-        secret=False,
-    )
-    midpoint = Numeric(
-        digits=option_price_precision,
         null=False,
         primary_key=False,
         unique=False,
