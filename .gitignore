@@ -107,4 +107,8 @@ frontend/cypress/snapshots/linux/1x
 .vscode/
 
 requirements.txt
-id_rsa
+secret/
+
+logs
+.vscode
+.mypy_cache
