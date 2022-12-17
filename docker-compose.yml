@@ -7,7 +7,7 @@ services:
         target: dev
         dockerfile: Dockerfile
         args:
-          BARCHART_API_TAG: 0.1.3
+          BARCHART_API_TAG: 0.2.1
     image: market-data:dev
     command: uvicorn --reload --app-dir src/server --host 0.0.0.0 main:app
     depends_on:
@@ -20,6 +20,7 @@ services:
       POSTGRES_PORT: 5432
     volumes:
       - .:/app
+      - /app/secret
       - /app/venv
     ports:
       - 8000:8000
