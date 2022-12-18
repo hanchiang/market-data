@@ -32,7 +32,7 @@ async def forwards():
         await RawTable.raw('ALTER TABLE stock_ticker_price ADD PRIMARY KEY (id, date);')
 
         await RawTable.raw("CREATE UNIQUE INDEX stock_ticker_price_sym_date_uq ON stock_ticker_price(symbol, date);")
-        print(await RawTable.raw("SELECT create_hypertable('stock_ticker_price', 'date');"))
+        print(await RawTable.raw("SELECT create_hypertable('stock_ticker_price', 'date', chunk_time_interval => INTERVAL '1 day');"))
 
     async def create_option_price():
         await OptionPrice.create_table()
@@ -45,7 +45,7 @@ async def forwards():
 
         await RawTable.raw(
             "CREATE UNIQUE INDEX option_price_sym_tradetime_exdate_strike_opt_type_uq ON option_price(symbol, trade_time, expiration_date, strike_price, option_type);")
-        print(await RawTable.raw("SELECT create_hypertable('option_price', 'trade_time')"))
+        print(await RawTable.raw("SELECT create_hypertable('option_price', 'trade_time', chunk_time_interval => INTERVAL '1 day')"))
 
     async def run():
         await create_stock_ticker()
