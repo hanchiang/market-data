@@ -15,7 +15,7 @@ There are 2 parts to the project:
   * API documentation runs at: `localhost:8000/docs`, `localhost:8000/redoc`.
 
 # Tech stack
-* Language: python
+* Language: Python
 * Framework: FastAPI
 * Database: TimescaleDB
 * ORM: Piccolo
