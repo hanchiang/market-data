@@ -44,7 +44,7 @@ class Scraper(BaseScraper):
             await self.scrape_ticker(symbol=symbol, tz=ny_tz)
             print('\n')
 
-        self.report(self.result)
+        self.report()
 
         await stop_postgres_connection_pool()
 

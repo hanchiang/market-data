@@ -7,10 +7,9 @@ class Result:
     def __init__(self):
         self.symbol_fetch_count = {}
         self.symbol_fetch_time_seconds = {}
+        self.fetch_count = 0
+        self.fetch_time = 0
         self.db_insert_time = 0
-
-    def get_symbol_fetch_count(self):
-        return self.symbol_fetch_count
 
     def get_fetch_count_for_symbol(self, symbol: str):
         return self.symbol_fetch_count.get(symbol, None)
@@ -21,20 +20,33 @@ class Result:
     def increase_fetch_count_for_symbol(self, symbol: str, delta: int):
         self.symbol_fetch_count[symbol] += delta
 
-    def get_symbol_fetch_time(self):
-        return self.symbol_fetch_time_seconds
-
     def get_symbol_fetch_time_for_symbol(self, symbol: str):
         return self.symbol_fetch_time_seconds.get(symbol, None)
 
     def set_symbol_fetch_time_for_symbol(self, symbol: str, time_taken: int):
         self.symbol_fetch_time_seconds[symbol] = time_taken
 
-    def get_db_insert_time(self):
-        return self.db_insert_time
-
     def increase_db_insert_time(self, delta: int):
         self.db_insert_time += delta
+
+    def sort(self):
+        self.symbol_fetch_count = { k: v for k, v in sorted(self.symbol_fetch_count.items(), key=lambda x: x[1], reverse=True) }
+        self.symbol_fetch_time_seconds = { k: v for k, v in sorted(self.symbol_fetch_time_seconds.items(), key=lambda x: x[1], reverse=True) }
+    def report(self):
+        self.sort()
+
+        for k, v in self.symbol_fetch_count.items():
+            print(f'Fetched {v} results for {k}')
+            self.fetch_count += v
+        print(f'Fetched {self.fetch_count} results in total')
+
+        for k, v in self.symbol_fetch_time_seconds.items():
+            print(f'{k} took {v} seconds')
+            self.fetch_time += v
+        print(f'Took {self.fetch_time} seconds in total')
+
+        print(f'Took {self.db_insert_time} seconds to insert into DB')
+
 
 # TODO: test
 class RateLimit:
@@ -53,9 +65,9 @@ class RateLimit:
     async def check_and_sleep(self):
         elapsed_seconds = time.time() - self.start_time
         requests_used = self.limit - self.remaining
-        expected_requests = elapsed_seconds * self.request_limit_per_sec
+        maximum_requests = elapsed_seconds * self.request_limit_per_sec
 
-        if requests_used <= expected_requests or self.remaining > self.limit / 2:
+        if requests_used <= maximum_requests or self.remaining > self.limit / 2:
             return
 
         actual_requests_rate = requests_used / elapsed_seconds
@@ -63,7 +75,7 @@ class RateLimit:
         duration_to_sleep = max(0, math.ceil(duration_to_sleep))
         if duration_to_sleep > 0:
             print(
-                f'Enforcing rate limit. Time elapsed {elapsed_seconds} seconds, requests used {requests_used}, expected requests {expected_requests}, duration to sleep {duration_to_sleep} seconds')
+                f'Enforcing rate limit. Time elapsed {elapsed_seconds} seconds, requests used {requests_used}, maximum requests {maximum_requests}, duration to sleep {duration_to_sleep} seconds')
             await asyncio.sleep(duration_to_sleep)
 
 
