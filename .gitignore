@@ -112,3 +112,5 @@ secret/
 logs
 .vscode
 .mypy_cache
+
+adhoc_scripts

@@ -13,8 +13,7 @@ from market_data_piccolo.tables import OptionPrice
 options_api = BarChartAPI().options
 
 class BaseScraper(ABC):
-    symbols = ['SPY', 'QQQ', 'DIA', 'TSLA', 'AAPL', 'AMZN', 'NVDA', 'BABA', 'AMD', 'NFLX', 'GOOG', 'MSFT', 'MSFT',
-               'AMC', 'COIN', 'TLT']
+    symbols = ['SPY', 'QQQ', 'DIA', 'TSLA', 'AAPL', 'AMZN', 'NVDA', 'BABA', 'AMD', 'NFLX', 'GOOG', 'MSFT', 'AMC', 'COIN', 'TLT']
 
     def __init__(self, result: Result, rate_limiter: RateLimit):
         self.result = result
@@ -24,20 +23,8 @@ class BaseScraper(ABC):
     async def run(self):
         pass
 
-    def report(self, result: Result):
-        fetch_count = 0
-        fetch_time = 0
-
-        for k, v in result.get_symbol_fetch_count().items():
-            print(f'Fetched {v} results for {k}')
-            fetch_count += v
-        print(f'Fetched {fetch_count} results in total')
-        for k, v in result.get_symbol_fetch_time().items():
-            print(f'{k} took {v} seconds')
-            fetch_time += v
-        print(f'Took {fetch_time} seconds in total')
-
-        print(f'Took {result.db_insert_time} seconds to insert into DB')
+    def report(self):
+        self.result.report()
 
     def transform_fields(self, uncameled_option_data, tz):
         try:
