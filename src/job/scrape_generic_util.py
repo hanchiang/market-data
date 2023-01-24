@@ -34,8 +34,8 @@ def uncamel_case_dict_inner(d: Dict[str, Any], result: Dict[str, Any]):
             result[uncamel_case(k)] = {}
             uncamel_case_dict_inner(v, result[uncamel_case(k)])
 
-async def random_sleep():
-    sleep_duration = random.uniform(0.01, 1)
+async def random_sleep(min_second = 0.1):
+    sleep_duration = random.uniform(min_second, min_second + 1)
     print(f'Sleeping for {sleep_duration} seconds')
     await asyncio.sleep(sleep_duration)
 

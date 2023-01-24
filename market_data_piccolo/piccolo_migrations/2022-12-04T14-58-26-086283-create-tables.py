@@ -28,6 +28,7 @@ async def forwards():
         # HACK: remove default id primary key, then recreate primary key with id and date
         # 1. Because piccolo forces us to create a primary key
         # 2. However any primary key or unique index in timescale db needs to include the partition column(date)
+        # https://docs.timescale.com/timescaledb/latest/overview/core-concepts/hypertables-and-chunks/hypertable-architecture/
         await RawTable.raw('ALTER TABLE stock_ticker_price DROP CONSTRAINT stock_ticker_price_pkey;')
         await RawTable.raw('ALTER TABLE stock_ticker_price ADD PRIMARY KEY (id, date);')
 
@@ -40,6 +41,7 @@ async def forwards():
         # HACK: remove default id primary key, then recreate primary key with id and date
         # 1. Because piccolo forces us to create a primary key
         # 2. However any primary key or unique index in timescale db needs to include the partition column(trade_time)
+        # https://docs.timescale.com/timescaledb/latest/overview/core-concepts/hypertables-and-chunks/hypertable-architecture/
         await RawTable.raw('ALTER TABLE option_price DROP CONSTRAINT option_price_pkey;')
         await RawTable.raw('ALTER TABLE option_price ADD PRIMARY KEY (id, trade_time);')
 

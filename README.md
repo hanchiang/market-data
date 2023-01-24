@@ -2,7 +2,7 @@
 This project is a API service that retrieves options data for a ticker and an expiration date.  
 There are 2 parts to the project:
 * Scheduler: A daily job that fetches option prices and saves it in the database
-* API server: Serves options prices
+* API server: Serves options prices(WIP)
 
 # Set up
 * Install [python 3](https://www.python.org/downloads/)
@@ -90,3 +90,4 @@ Columns:
 * API server
 * background job to remove option_price that have expired
 * new table: stock_ticker_config. Store a flag indicating whether ticker should be scraped
+* Use poetry for dependency management

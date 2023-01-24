@@ -90,8 +90,9 @@ class Scraper(BaseScraper):
                         self.result.increase_db_insert_time(time.time() - before_insert_db)
                 except Exception as e:
                     print(e)
-                await random_sleep()
-
+                await random_sleep(0.1)
+            await random_sleep(1)
+        await random_sleep(3)
         end_time = time.time()
         self.result.set_symbol_fetch_time_for_symbol(symbol, end_time - start_time)
         return option_price_to_insert
