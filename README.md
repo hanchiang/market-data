@@ -2,7 +2,9 @@
 This project is a API service that retrieves options data for a ticker and an expiration date.  
 There are 2 parts to the project:
 * Scheduler: A daily job that fetches option prices and saves it in the database
+  * `src/job/scraper.py` 
 * API server: Serves options prices(WIP)
+  * `src/server/main.py`
 
 # Set up
 * Install [python 3](https://www.python.org/downloads/)
