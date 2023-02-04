@@ -35,18 +35,18 @@ class Result:
     def report(self):
         self.sort()
 
-        for k, v in self.symbol_fetch_count.items():
-            print(f'Fetched {v} results for {k}')
-            self.fetch_count += v
-        print(f'Fetched {self.fetch_count} results in total')
+        if len(self.symbol_fetch_count) != len(self.symbol_fetch_time_seconds):
+            print(f'symbol_fetch_count and symbol_fetch_time_seconds dont have the same number of symbols')
 
-        for k, v in self.symbol_fetch_time_seconds.items():
-            print(f'{k} took {v} seconds')
-            self.fetch_time += v
-        print(f'Took {self.fetch_time} seconds in total')
+        for symbol, count in self.symbol_fetch_count.items():
+            self.fetch_count += count
+            fetch_time = self.symbol_fetch_time_seconds[symbol]
+            self.fetch_time += fetch_time
 
-        print(f'Took {self.db_insert_time} seconds to insert into DB')
+            print(f'Retrieved {count} results for {symbol}, time taken: {fetch_time} seconds, average time per item: {fetch_time / count} seconds')
 
+        print(f'Retrieved {self.fetch_count} results in total, time taken: {self.fetch_time} seconds, average time per item: {self.fetch_count / self.fetch_count} seconds')
+        print(f'Took {self.db_insert_time} seconds to insert {self.fetch_count} rows into DB, average time per row: {self.db_insert_time / self.fetch_count}')
 
 # TODO: test
 class RateLimit:
