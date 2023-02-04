@@ -25,10 +25,11 @@ async def shutdown_event():
 async def health_check():
     return {'data': 'market data is running!'}
 
+# TODO: most active options API(symbol, name, last, change, %change, iv rank, iv%, iv 1 yr high, volume, %put, %call, put/call vol)
 # TODO: Use an arg to determine whether to connect to API source or DB
 @app.get("/options/{symbol}")
 async def options_for_ticker(
-    symbol: str, order_dir = '', expiration_type = '', expiration_date: Optional[date] = None,
+    symbol: str, order_dir = '', expiration_type = '', expiration_date: Optional[str] = None,
     group_by: Optional[str] = '', order_by: Optional[str] = ''
 ):
     data = await options_api.get_options_for_ticker(symbol=symbol, expiration_type=expiration_type,
