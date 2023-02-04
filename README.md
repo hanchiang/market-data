@@ -23,12 +23,15 @@ There are 2 parts to the project:
 * ORM: Piccolo
 
 # Features
-View options data for a ticker for an expiration date for each day, and in total.
+View options data for a ticker for an expiration date for each day(change - line graph) and total(sum - bar graph).
+* volume/open interest/IV rank/IV % of option type by expiration date and strike price 
+* Highest spike in volume/open interest/IV rank/IV % by expiration date and strike price
+
+Other metrics: % change
 
 ## Options
 - [ ] View how different dimensions change over time for an expiration date
   - [ ] High priority: Open interest, volume, IV, last, change
-  - [ ] Medium priority: bid, ask
 - [ ] Change statistics
   - [ ] Open interest by strike price
   - [ ] Volume by strike price
@@ -45,14 +48,15 @@ View options data for a ticker for an expiration date for each day, and in total
 
 
 # Data model
-## Ticker table
+## Stock ticker table
 Columns:
+* id(PK) - big serial
 * symbol(PK) - varchar
 * name - varchar
 
-## Ticker price table
+## Stock ticker price table
 * id(PK) - big serial
-* symbol(FK ticker)
+* symbol(FK stock ticker)
 * date - date
 * open_price - decimal
 * high_price - decimal
@@ -63,7 +67,7 @@ Columns:
 ## Options price table
 * id(PK) - big serial
 * symbol - varchar
-* base_symbol(FK ticker)
+* base_symbol(FK stock ticker)
 * trade_time - timestamp
 * option_type - varchar
 * strike_price - decimal
@@ -93,3 +97,4 @@ Columns:
 * background job to remove option_price that have expired
 * new table: stock_ticker_config. Store a flag indicating whether ticker should be scraped
 * Use poetry for dependency management
+* Reporting: number of stock ticker in option_price table, number of rows for each stock ticker

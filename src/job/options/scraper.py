@@ -6,9 +6,9 @@ from barchart_api import BarChartAPI
 import time
 import pytz
 
-from market_data_piccolo.tables import OptionPrice
-from src.job.base_scraper import BaseScraper, Result, RateLimit
-from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
+from market_data_piccolo.tables.option_price import OptionPrice
+from src.job.options.base_scraper import BaseScraper, Result, RateLimit
+from src.job.options.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
     uncamel_case_dict, random_sleep
 
 options_api = BarChartAPI().options
@@ -41,7 +41,9 @@ class Scraper(BaseScraper):
         await start_postgres_connection_pool()
 
         for symbol in self.symbols:
-            await self.scrape_ticker(symbol=symbol, tz=ny_tz)
+            inserted = await self.scrape_ticker(symbol=symbol, tz=ny_tz)
+            # TODO: post check
+            print("inserted data into DB:", inserted)
             print('\n')
 
         self.report()
@@ -52,6 +54,7 @@ class Scraper(BaseScraper):
         print(f'Took {end_time - start_time} seconds')
 
     async def scrape_ticker(self, symbol: str, tz) -> List[Dict]:
+        # TODO: Should check if symbol is in stock_ticker table first before proceeding
         start_time = time.time()
         print(f'Fetching options data for {symbol}')
 
@@ -63,6 +66,7 @@ class Scraper(BaseScraper):
         await self.rate_limiter.handle_rate_limit(rate_limit_limit, rate_limit_remaining)
         weekly_monthly_expirations = self.prepare_expiration_dates_list(expiration_dates_res)
 
+        gathered_result = []
         for expiration in weekly_monthly_expirations:
             for ex_date in expiration['expiration_dates']:
                 option_price_to_insert = []
@@ -86,16 +90,16 @@ class Scraper(BaseScraper):
                     if len(option_price_to_insert) > 0:
                         print(f'Inserting {len(option_price_to_insert)} option price')
                         before_insert_db = time.time()
-                        await asyncio.gather(*option_price_to_insert)
+                        gathered_result.extend(await asyncio.gather(*option_price_to_insert))
                         self.result.increase_db_insert_time(time.time() - before_insert_db)
                 except Exception as e:
-                    print(e)
+                    print("[scrape_ticker] error:", e)
                 await random_sleep(0.1)
             await random_sleep(1)
         await random_sleep(3)
         end_time = time.time()
         self.result.set_symbol_fetch_time_for_symbol(symbol, end_time - start_time)
-        return option_price_to_insert
+        return True if len(gathered_result) > 0 else False
 
 
 if __name__ == '__main__':
