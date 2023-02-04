@@ -1,4 +1,3 @@
-from datetime import date
 from fastapi import FastAPI
 from typing import Optional
 
@@ -8,7 +7,7 @@ from src.db.index import run_migration, start_postgres_connection_pool, stop_pos
 
 app = FastAPI()
 
-options_api = BarChartAPI().options
+barchart = BarChartAPI()
 
 @app.on_event("startup")
 async def startup_event():
@@ -32,7 +31,7 @@ async def options_for_ticker(
     symbol: str, order_dir = '', expiration_type = '', expiration_date: Optional[str] = None,
     group_by: Optional[str] = '', order_by: Optional[str] = ''
 ):
-    data = await options_api.get_options_for_ticker(symbol=symbol, expiration_type=expiration_type,
+    data = await barchart.options.get_options_for_ticker(symbol=symbol, expiration_type=expiration_type,
         expiration_date=expiration_date, group_by=group_by, order_by=order_by, order_dir=order_dir
     )
 
@@ -41,5 +40,29 @@ async def options_for_ticker(
 @app.get("/options/{symbol}/expirations")
 async def options_expirations_for_ticker(symbol: str):
     # TODO: cache
-    data = await options_api.get_options_expirations_for_ticker(symbol=symbol)
+    data = await barchart.options.get_options_expirations_for_ticker(symbol=symbol)
     return {'data': data}
+
+@app.get("/stocks/price/{symbol}")
+async def stock_price(symbol: str, order='desc', interval='daily', num_records=20):
+    data = await barchart.stocks.get_stock_prices(symbol=symbol, interval=interval, max_records=num_records, order=order)
+
+    # format string response into json
+    data['data'] = data['data'].rstrip()
+    formatted_prices = list(map(format_stock_price_object, data['data'].split('\n')))
+    data['data'] = formatted_prices
+
+    return {'data': data}
+
+# TODO: Refacor
+def format_stock_price_object(item):
+    (symbol, date, open, high, low, close, volume) = item.split(',')
+    return {
+        'symbol': symbol,
+        'date': date,
+        'open': open,
+        'high': high,
+        'low': low,
+        'close': close,
+        'volume': volume
+    }

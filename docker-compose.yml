@@ -7,8 +7,9 @@ services:
         target: dev
         dockerfile: Dockerfile
         args:
-          BARCHART_API_TAG: 0.2.1
+          BARCHART_API_TAG: 0.5.1
     image: market-data:dev
+    container_name: backend
     command: uvicorn --reload --app-dir src/server --host 0.0.0.0 main:app
     depends_on:
       - db
@@ -26,6 +27,7 @@ services:
       - 8000:8000
   db:
     image: timescale/timescaledb-ha:pg14-latest
+    container_name: db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
