@@ -54,6 +54,7 @@ class Scraper(BaseScraper):
         print(f'Took {end_time - start_time} seconds')
 
     async def scrape_ticker(self, symbol: str, tz) -> List[Dict]:
+        # TODO: Should check if symbol is in stock_ticker table first before proceeding
         start_time = time.time()
         print(f'Fetching options data for {symbol}')
 

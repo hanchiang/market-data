@@ -45,7 +45,7 @@ class Result:
 
             print(f'Retrieved {count} results for {symbol}, time taken: {fetch_time} seconds, average time per item: {fetch_time / count} seconds')
 
-        print(f'Retrieved {self.fetch_count} results in total, time taken: {self.fetch_time} seconds, average time per item: {self.fetch_count / self.fetch_count} seconds')
+        print(f'Retrieved {self.fetch_count} results for {len(self.symbol_fetch_count)} symbols, time taken: {self.fetch_time} seconds, average time per item: {self.fetch_time / self.fetch_count} seconds')
         print(f'Took {self.db_insert_time} seconds to insert {self.fetch_count} rows into DB, average time per row: {self.db_insert_time / self.fetch_count}')
 
 # TODO: test
