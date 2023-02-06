@@ -45,6 +45,9 @@ async def options_expirations_for_ticker(symbol: str):
 
 @app.get("/stocks/price/{symbol}")
 async def stock_price(symbol: str, order='desc', interval='daily', num_records=20):
+    MAX_RECORDS = 100
+    if num_records > MAX_RECORDS:
+        num_records = MAX_RECORDS
     data = await barchart.stocks.get_stock_prices(symbol=symbol, interval=interval, max_records=num_records, order=order)
 
     # format string response into json
@@ -54,7 +57,7 @@ async def stock_price(symbol: str, order='desc', interval='daily', num_records=2
 
     return {'data': data}
 
-# TODO: Refacor
+# TODO: Refactor
 def format_stock_price_object(item):
     (symbol, date, open, high, low, close, volume) = item.split(',')
     return {

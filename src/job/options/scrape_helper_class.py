@@ -49,6 +49,7 @@ class Result:
         print(f'Took {self.db_insert_time} seconds to insert {self.fetch_count} rows into DB, average time per row: {self.db_insert_time / self.fetch_count}')
 
 # TODO: test
+# TODO: Move to barchart class
 class RateLimit:
     request_limit_per_sec = 1
 

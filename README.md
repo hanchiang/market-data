@@ -1,8 +1,8 @@
 # Introduction
 This project is a API service that retrieves options data for a ticker and an expiration date.  
 There are 2 parts to the project:
-* Scheduler: A daily job that fetches option prices and saves it in the database
-  * `src/job/scraper.py` 
+* Scheduler: A job that fetches option prices and saves it in the database
+  * `src/job/options/scraper.py` 
 * API server: Serves options prices(WIP)
   * `src/server/main.py`
 
@@ -92,7 +92,8 @@ Columns:
 * rho - decimal
 
 # TODO:
-* Scheduler
+* Scheduler: stocks, options
+* stock ticker price job
 * API server
 * background job to remove option_price that have expired
 * new table: stock_ticker_config. Store a flag indicating whether ticker should be scraped
