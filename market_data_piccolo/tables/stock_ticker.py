@@ -1,4 +1,5 @@
-from piccolo.columns import Varchar, BigSerial
+
+from piccolo.columns import Varchar, BigSerial, Timestamptz
 from piccolo.columns.indexes import IndexMethod
 from piccolo.table import Table
 
@@ -32,4 +33,13 @@ class StockTicker(Table, tablename="stock_ticker"):
         index_method=IndexMethod.btree,
         db_column_name=None,
         secret=False,
+    )
+    created_at = Timestamptz(
+        null=False,
+        primary_key=False,
+        unique=False,
+        index=False,
+        index_method=IndexMethod.btree,
+        db_column_name=None,
+        secret=False
     )

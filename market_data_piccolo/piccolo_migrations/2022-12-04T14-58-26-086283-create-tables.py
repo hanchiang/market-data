@@ -1,3 +1,5 @@
+import datetime
+
 from piccolo.apps.migrations.auto.migration_manager import MigrationManager
 from piccolo.columns import Varchar, BigSerial, ForeignKey, OnDelete, OnUpdate, Date, Numeric, Integer, Timestamptz
 from piccolo.columns.indexes import IndexMethod
@@ -41,6 +43,15 @@ class StockTicker(Table, tablename="stock_ticker"):
         index_method=IndexMethod.btree,
         db_column_name=None,
         secret=False,
+    )
+    created_at = Timestamptz(
+        null=False,
+        primary_key=False,
+        unique=False,
+        index=False,
+        index_method=IndexMethod.btree,
+        db_column_name=None,
+        secret=False
     )
 
 class StockTickerPrice(Table, tablename="stock_ticker_price"):
@@ -123,6 +134,15 @@ class StockTickerPrice(Table, tablename="stock_ticker_price"):
         index_method=IndexMethod.btree,
         db_column_name=None,
         secret=False,
+    )
+    created_at = Timestamptz(
+        null=False,
+        primary_key=False,
+        unique=False,
+        index=False,
+        index_method=IndexMethod.btree,
+        db_column_name=None,
+        secret=False
     )
 
 class OptionPrice(Table, tablename="option_price"):
@@ -373,6 +393,15 @@ class OptionPrice(Table, tablename="option_price"):
         index_method=IndexMethod.btree,
         db_column_name=None,
         secret=False,
+    )
+    created_at = Timestamptz(
+        null=False,
+        primary_key=False,
+        unique=False,
+        index=False,
+        index_method=IndexMethod.btree,
+        db_column_name=None,
+        secret=False
     )
 
 
