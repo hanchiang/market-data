@@ -1,3 +1,5 @@
+import datetime
+
 from piccolo.columns.base import OnDelete
 from piccolo.columns.base import OnUpdate
 from piccolo.columns.column_types import BigSerial
@@ -263,6 +265,15 @@ class OptionPrice(Table, tablename="option_price"):
         index_method=IndexMethod.btree,
         db_column_name=None,
         secret=False,
+    )
+    created_at = Timestamptz(
+        null=False,
+        primary_key=False,
+        unique=False,
+        index=False,
+        index_method=IndexMethod.btree,
+        db_column_name=None,
+        secret=False
     )
 
 

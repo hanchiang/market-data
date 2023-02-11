@@ -1,4 +1,5 @@
-from piccolo.columns import BigSerial, ForeignKey, OnDelete, OnUpdate, Date, Numeric, Integer
+
+from piccolo.columns import BigSerial, ForeignKey, OnDelete, OnUpdate, Date, Numeric, Integer, Timestamptz
 from piccolo.columns.indexes import IndexMethod
 from piccolo.table import Table
 
@@ -85,4 +86,13 @@ class StockTickerPrice(Table, tablename="stock_ticker_price"):
         index_method=IndexMethod.btree,
         db_column_name=None,
         secret=False,
+    )
+    created_at = Timestamptz(
+        null=False,
+        primary_key=False,
+        unique=False,
+        index=False,
+        index_method=IndexMethod.btree,
+        db_column_name=None,
+        secret=False
     )
