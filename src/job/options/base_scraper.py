@@ -7,10 +7,12 @@ from barchart_api import BarChartAPI
 from src.job.options.scrape_helper_class import Result, RateLimit
 from src.job.options.scrape_generic_util import get_year_month_day_from_yyyy_mm_dd
 
+from market_data_piccolo.tables.stock_ticker import StockTicker
+
 options_api = BarChartAPI().options
 
 class BaseScraper(ABC):
-    symbols = ['SPY', 'QQQ', 'DIA', 'TSLA', 'AAPL', 'AMZN', 'NVDA', 'BABA', 'AMD', 'NFLX', 'GOOG', 'MSFT', 'AMC', 'COIN', 'TLT']
+    symbols_to_scrape = []
 
     def __init__(self, result: Result, rate_limiter: RateLimit):
         self.result = result
@@ -20,8 +22,19 @@ class BaseScraper(ABC):
     async def run(self):
         pass
 
-    def report(self):
-        self.result.report()
+    async def init_symbols_to_scrape(self):
+        if len(self.symbols_to_scrape) > 0:
+            return
+
+        res = await StockTicker.select(StockTicker.symbol)
+        self.symbols_to_scrape = list(map(lambda r: r['symbol'], res))
+        return
+
+    def print_report(self):
+        print(self.result.get_report())
+
+    def get_report(self):
+        return self.result.get_report()
 
     def transform_fields(self, uncameled_option_data, tz):
         try:
