@@ -1,8 +1,11 @@
 # Introduction
 This project is a API service that retrieves options data for a ticker and an expiration date.  
 There are 2 parts to the project:
-* Scheduler: A job that fetches option prices and saves it in the database
-  * `src/job/options/scraper.py` 
+* Scheduler:
+  * `src/job/options/scraper.py`: Options data for stocks
+  * `src/job/stocks/scraper.py`: Stock price
+  * TODO: Most active options
+  * TODO: Changes in options open interest
 * API server: Serves options prices(WIP)
   * `src/server/main.py`
 
@@ -96,6 +99,22 @@ Store snapshot of options price for a stock ticker, expiration date, strike pric
 * vega - decimal
 * rho - decimal
 
+## Most active options table
+Store ticker that have the most options activity(open interest, volume, IV)
+* id(PK) - big serial
+* symbol - varchar
+* last_price - decimal
+* price_change - decimal
+* percent_change - decimal
+* options_total_volume - integer
+* options_put_volume_percent - decimal
+* options_call_volume_percent - decimal
+* options_weighted_implied_volatility - decimal
+* options_implied_volatility_rank_1y - decimal
+* options_implied_volatility_percentile_1y - decimal
+* underlying_implied_volatility_high_1y - decimal
+* trade_time - timestamp
+
 ## Options open interest change table
 Store options with the largest positive and negative open interest change
 * id(PK) - big serial
@@ -117,8 +136,6 @@ Store options with the largest positive and negative open interest change
 * trade_time - timestamp
 
 # TODO:
-* Scheduler: stocks, options
-* stock ticker price job
 * background job to remove option_price that have expired
 * Use poetry for dependency management
 * Reporting: number of stock ticker in option_price table, number of rows for each stock ticker
