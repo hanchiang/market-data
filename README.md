@@ -23,7 +23,11 @@ There are 2 parts to the project:
 * ORM: Piccolo
 
 # Features
-View options data for a ticker for an expiration date for each day(change - line graph) and total(sum - bar graph).
+2 kinds of data:
+- Aggregated data for a stock ticker(volume(total, put, call), IV, IV rank, Iv %, underlying IV 1 year high)
+- Individual options data(expiration date, strike price, option type) for a stock ticker such as greeks, volatility, average volatility, volume, open interest
+
+View options data for a ticker for an expiration date, strike price, option type, for each day(change - line graph) and total(sum - bar graph).
 * volume/open interest/IV rank/IV % of option type by expiration date and strike price 
 * Highest spike in volume/open interest/IV rank/IV % by expiration date and strike price
 
@@ -65,6 +69,7 @@ Columns:
 * volume - integer
 
 ## Options price table
+Store snapshot of options price for a stock ticker, expiration date, strike price, option type for every trade day
 * id(PK) - big serial
 * symbol - varchar
 * base_symbol(FK stock ticker)
@@ -91,11 +96,31 @@ Columns:
 * vega - decimal
 * rho - decimal
 
+## Options open interest change table
+Store options with the largest positive and negative open interest change
+* id(PK) - big serial
+* symbol - varchar
+* base_symbol - varchar
+* last_price - decimal
+* option_type - varchar
+* strike_price - decimal
+* expiration_date - date
+* days_to_expiration - integer
+* bid_price - decimal
+* midpoint - decimal
+* ask_price - decimal
+* last_price - decimal
+* volume - integer
+* open_interest - integer
+* open_interest_change - integer
+* volatility - decimal
+* trade_time - timestamp
+
 # TODO:
 * Scheduler: stocks, options
 * stock ticker price job
-* API server
 * background job to remove option_price that have expired
-* new table: stock_ticker_config. Store a flag indicating whether ticker should be scraped
 * Use poetry for dependency management
 * Reporting: number of stock ticker in option_price table, number of rows for each stock ticker
+* Confirm whether options data is indeed a daily snapshot that includes all past trade days
+* Encode response data

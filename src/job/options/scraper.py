@@ -59,7 +59,6 @@ class Scraper(BaseScraper):
         print(f'Took {end_time - start_time} seconds')
 
     async def scrape_ticker(self, symbol: str, tz) -> List[Dict]:
-        # TODO: Should check if symbol is in stock_ticker table first before proceeding
         # TODO: should probably ignore strike prices that are more than a certain number outside
         # of the current stock price(e.g. 20%)
         start_time = time.time()
@@ -80,6 +79,8 @@ class Scraper(BaseScraper):
             for ex_date in expiration['expiration_dates']:
                 option_price_to_insert = []
                 print(f'Getting options data for {expiration["expiration_type"]} {ex_date}')
+                # TODO: should probably ignore strike prices that are more than a certain number outside of the current stock price(e.g. 20%)
+                # TODO: Skip those options where trade_time < (latest trade_time saved for the base_symbol in DB) - 1 day
                 options_res = await self.get_options_data(symbol=symbol, expiration_date=ex_date,
                                                           expiration_type=expiration['expiration_type'])
                 print(f'Fetched {options_res["count"]} results')
@@ -104,7 +105,6 @@ class Scraper(BaseScraper):
                         self.result.increase_db_insert_count(gathered_result.success_count)
                         if gathered_result.exception_count > 0:
                             print(f'[scrape_ticker] There are {gathered_result.exception_count} insert DB errors:', gathered_result.exceptions)
-                            gathered_result.compound_exception().exceptions
                 except Exception as e:
                     print(f'[scrape_ticker] error:', e)
                     raise RuntimeError(e)
@@ -115,7 +115,7 @@ class Scraper(BaseScraper):
         self.result.set_symbol_fetch_time_for_symbol(symbol, end_time - start_time)
         return True if self.result.db_insert_count > before_db_insert_count else False
 
-
+# python src/job/options/scraper.py
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     scraper = Scraper(result=Result(), rate_limiter=RateLimit())
