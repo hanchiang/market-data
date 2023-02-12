@@ -7,3 +7,5 @@ Dockerfile
 my_readme.txt
 README.md
 logs
+adhoc_scripts
+*.bak
