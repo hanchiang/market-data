@@ -423,17 +423,9 @@ async def forwards():
             (symbol ASC NULLS LAST);
             ''')
 
-    async def create_stock_ticker_price_hypertable():
+    async def create_stock_ticker_price_table():
         await StockTickerPrice.create_table()
-        # HACK: remove default id primary key, then recreate primary key with id and date
-        # 1. Because piccolo forces us to create a primary key
-        # 2. However any primary key or unique index in timescale db needs to include the partition column(date)
-        # https://docs.timescale.com/timescaledb/latest/overview/core-concepts/hypertables-and-chunks/hypertable-architecture/
-        await RawTable.raw('ALTER TABLE stock_ticker_price DROP CONSTRAINT stock_ticker_price_pkey;')
-        await RawTable.raw('ALTER TABLE stock_ticker_price ADD PRIMARY KEY (id, date);')
-
         await RawTable.raw("CREATE UNIQUE INDEX stock_ticker_price_sym_date_uq ON stock_ticker_price(symbol, date);")
-        print(await RawTable.raw("SELECT create_hypertable('stock_ticker_price', 'date', chunk_time_interval => INTERVAL '1 day');"))
 
     async def create_option_price_hyptertable():
         await OptionPrice.create_table()
@@ -447,11 +439,11 @@ async def forwards():
 
         await RawTable.raw(
             "CREATE UNIQUE INDEX option_price_basesym_exdate_strike_opt_typ_tradetime_uq ON option_price(base_symbol, expiration_date, strike_price, option_type, trade_time);")
-        print(await RawTable.raw("SELECT create_hypertable('option_price', 'trade_time', chunk_time_interval => INTERVAL '1 day')"))
+        print(await RawTable.raw("SELECT create_hypertable('option_price', 'trade_time', chunk_time_interval => INTERVAL '5 day')"))
 
     async def run():
         await create_stock_ticker_table()
-        await create_stock_ticker_price_hypertable()
+        await create_stock_ticker_price_table()
         await create_option_price_hyptertable()
 
     async def run_backwards():
