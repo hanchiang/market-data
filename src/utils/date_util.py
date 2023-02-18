@@ -13,7 +13,7 @@ def has_market_opened():
 
 def has_market_closed():
     ny_now = time_now()
-    return ny_now.hour > 16 and ny_now.minute > 15
+    return ny_now.hour > 16 or (ny_now.hour == 16 and ny_now.minute > 15)
 
 def get_most_recent_trading_day() -> datetime.datetime:
     ny_now = time_now()
