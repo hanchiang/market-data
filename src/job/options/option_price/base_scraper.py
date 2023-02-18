@@ -4,10 +4,10 @@ from typing import Tuple, List, Dict
 
 from barchart_api import BarChartAPI
 
-from src.job.options.scrape_helper_class import Result, RateLimit
-from src.job.options.scrape_generic_util import get_year_month_day_from_yyyy_mm_dd
-
+from src.job.options.option_price.scrape_helper_class import Result
+from src.job.scrape_generic_util import get_year_month_day_from_yyyy_mm_dd
 from market_data_piccolo.tables.stock_ticker import StockTicker
+from src.job.rate_limit import RateLimit
 
 options_api = BarChartAPI().options
 

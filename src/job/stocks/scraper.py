@@ -9,9 +9,9 @@ from asyncio_tools import gather, GatheredResults
 
 from src.job.stocks.base_scraper import BaseScraper
 from market_data_piccolo.tables.stock_ticker_price import StockTickerPrice
-from src.job.options.scrape_helper_class import RateLimit
-from src.job.options.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, random_sleep
+from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, random_sleep
 from src.utils.date_util import get_most_recent_trading_day
+from src.job.rate_limit import RateLimit
 
 stocks_api = BarChartAPI().stocks
 
@@ -65,6 +65,7 @@ class Scraper(BaseScraper):
                 return
         else:
             print(f'Stock price for {symbol} has not been saved before. Getting all historical prices')
+        print(f'Number of records to retrieve for {symbol}: {records_to_retrieve if records_to_retrieve else "all"}')
 
         res = await stocks_api.get_stock_prices(symbol=symbol, max_records=records_to_retrieve)
         data = res['data'].rstrip()

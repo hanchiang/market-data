@@ -8,8 +8,9 @@ import pytz
 from asyncio_tools import gather, GatheredResults
 
 from market_data_piccolo.tables.option_price import OptionPrice
-from src.job.options.base_scraper import BaseScraper, Result, RateLimit
-from src.job.options.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
+from src.job.options.option_price.base_scraper import BaseScraper, Result
+from src.job.rate_limit import RateLimit
+from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
     uncamel_case_dict, random_sleep
 
 options_api = BarChartAPI().options

@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 
 from barchart_api import BarChartAPI
 
-from src.job.options.scrape_helper_class import RateLimit
-
+from src.job.rate_limit import RateLimit
 from market_data_piccolo.tables.stock_ticker import StockTicker
 
 stocks_api = BarChartAPI().stocks
