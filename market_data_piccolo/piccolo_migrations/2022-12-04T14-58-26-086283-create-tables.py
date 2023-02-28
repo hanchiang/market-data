@@ -409,8 +409,6 @@ class OptionPrice(Table, tablename="option_price"):
 class RawTable(Table):
     pass
 
-# TODO: Copy the table definition here. This is to make sure migrations are always deterministic
-
 # For some reason, creating tables with pure SQL result in the piccolo table having only an id column...
 async def forwards():
     manager = MigrationManager(

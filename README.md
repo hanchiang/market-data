@@ -37,12 +37,9 @@ View options data for a ticker for an expiration date, strike price, option type
 Other metrics: % change
 
 ## Options
-- [ ] View how different dimensions change over time for an expiration date
+- [ ] View how different dimensions change over time for an expiration date, strike price(+- 10 from current price, include previously included strike prices)
   - [ ] High priority: Open interest, volume, IV, last, change
-- [ ] Change statistics
-  - [ ] Open interest by strike price
-  - [ ] Volume by strike price
-- [ ] Aggregate statistics
+- [ ] Aggregate statistics for an expiration date
   - [ ] Open interest by strike price
   - [ ] Volume by strike price
 
@@ -137,7 +134,10 @@ Store options with the largest positive and negative open interest change
 
 # TODO:
 * background job to remove option_price that have expired
+* job: largest change in open interest, most active options
 * Use poetry for dependency management
 * Reporting: number of stock ticker in option_price table, number of rows for each stock ticker
 * Confirm whether options data is indeed a daily snapshot that includes all past trade days
 * Encode response data
+* Test
+* Get expirations date of a stock
