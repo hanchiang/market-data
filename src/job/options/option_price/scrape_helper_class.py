@@ -45,7 +45,7 @@ class Result:
 
         for symbol, count in self.symbol_fetch_count.items():
             self.fetch_count += count
-            fetch_time = self.symbol_fetch_time_seconds[symbol]
+            fetch_time = self.symbol_fetch_time_seconds.get(symbol, 0)
             self.fetch_time += fetch_time
 
             report = f'{report}\nRetrieved {count} results for {symbol}, time taken: {fetch_time} seconds'
