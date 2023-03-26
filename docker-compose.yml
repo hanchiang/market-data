@@ -7,7 +7,7 @@ services:
         target: dev
         dockerfile: Dockerfile
         args:
-          BARCHART_API_TAG: 0.6.3
+          BARCHART_API_TAG: 0.6.4
     image: market-data:dev
     container_name: backend
     command: uvicorn --reload --app-dir src/server --host 0.0.0.0 main:app

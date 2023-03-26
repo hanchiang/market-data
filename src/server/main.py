@@ -43,6 +43,16 @@ async def options_expirations_for_ticker(symbol: str):
     data = await barchart.options.get_options_expirations_for_ticker(symbol=symbol)
     return {'data': data}
 
+@app.get("/options-most-active")
+async def most_active_options():
+    data = await barchart.options.get_most_active_options()
+    return {'data' : data}
+
+@app.get("/options-change-in-open-interest")
+async def change_in_open_interest(change_dir: Optional[str] = 'inc'):
+    data = await barchart.options.get_change_in_options_interest(change_dir=change_dir)
+    return {'data': data}
+
 @app.get("/stocks/price/{symbol}")
 async def stock_price(symbol: str, order='desc', interval='daily', num_records=20):
     MAX_RECORDS = 100

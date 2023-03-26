@@ -37,7 +37,7 @@ View options data for a ticker for an expiration date, strike price, option type
 Other metrics: % change
 
 ## Options
-- [ ] View how different dimensions change over time for an expiration date, strike price(+- 10 from current price, include previously included strike prices)
+- [ ] View how different dimensions change over time for an expiration date, strike price(+- 20 from current price)
   - [ ] High priority: Open interest, volume, IV, last, change
 - [ ] Aggregate statistics for an expiration date
   - [ ] Open interest by strike price
