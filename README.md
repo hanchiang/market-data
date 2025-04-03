@@ -141,3 +141,4 @@ Store options with the largest positive and negative open interest change
 * Encode response data
 * Test
 * Get expirations date of a stock
+* Need to wait for timescaledb to support MACOS ventura....

@@ -7,7 +7,7 @@ services:
         target: dev
         dockerfile: Dockerfile
         args:
-          BARCHART_API_TAG: 0.6.4
+          MARKET_DATA_API_TAG: 0.19.0
     image: market-data:dev
     container_name: backend
     command: uvicorn --reload --app-dir src/server --host 0.0.0.0 main:app
@@ -17,7 +17,7 @@ services:
       POSTGRES_HOST: db
       POSTGRES_DB: market_data
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: root
       POSTGRES_PORT: 5432
     volumes:
       - .:/app
@@ -30,7 +30,7 @@ services:
     container_name: db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: root
       POSTGRES_DB: market_data
     volumes:
       - db-volume:/home/postgres/pgdata/data

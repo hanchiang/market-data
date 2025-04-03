@@ -2,19 +2,15 @@ import asyncio
 import datetime
 from typing import List, Dict
 
-from barchart_api import BarChartAPI
 import time
 import pytz
 from asyncio_tools import gather, GatheredResults
 
+from src.data_source.barchart import get_tradfi_api
 from src.job.stocks.base_scraper import BaseScraper
 from market_data_piccolo.tables.stock_ticker_price import StockTickerPrice
 from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, random_sleep
 from src.utils.date_util import get_most_recent_trading_day
-from src.job.rate_limit import RateLimit
-
-stocks_api = BarChartAPI().stocks
-
 
 class Scraper(BaseScraper):
     async def run(self):
@@ -37,7 +33,8 @@ class Scraper(BaseScraper):
                 print(f"inserted data for {symbol} into DB?:", inserted)
                 await random_sleep(1)
             except Exception as e:
-                print("[run] error:", e)
+                print(f"[run] error: {e}")
+                raise e
                 # TODO: send telegram notification
 
         # TODO: send email/telegram notification
@@ -55,20 +52,22 @@ class Scraper(BaseScraper):
         start_time = time.time()
 
         records_to_retrieve = None
-        if latest_stock_ticker_price and latest_stock_ticker_price[0]:
+        if latest_stock_ticker_price is not None and latest_stock_ticker_price[0] is not None:
             latest_stock_ticker_price_date: datetime.date = latest_stock_ticker_price[0]['date']
             most_recent_trade_day = get_most_recent_trading_day().date()
             delta = most_recent_trade_day - latest_stock_ticker_price_date
             records_to_retrieve = delta.days
+            print(f"Latest stock ticker price date: {latest_stock_ticker_price_date}, most recent trade day: {most_recent_trade_day}, delta: {delta.days}")
             if records_to_retrieve == 0:
                 print(f'No data to retrieve for {symbol}. Latest stock ticker price date: {latest_stock_ticker_price_date}, most recent trade day: {most_recent_trade_day}')
-                return
+                return []
         else:
             print(f'Stock price for {symbol} has not been saved before. Getting all historical prices')
         print(f'Number of records to retrieve for {symbol}: {records_to_retrieve if records_to_retrieve else "all"}')
 
-        res = await stocks_api.get_stock_prices(symbol=symbol, max_records=records_to_retrieve)
-        data = res['data'].rstrip()
+        tradfi_api = await get_tradfi_api()
+        res = await tradfi_api.barchart.barchart_stocks.get_stock_prices(symbol=symbol, max_records=records_to_retrieve)
+        data = res.rstrip()
 
         stock_ticker_price_to_insert = []
         for row in data.split('\n'):
@@ -94,8 +93,6 @@ class Scraper(BaseScraper):
 
         (year, month, day) = date.split('-')
 
-        # TODO: year month day
-
         formatted = {
             'symbol': symbol,
             'date': datetime.date.today().replace(int(year), int(month), int(day)),
@@ -107,8 +104,11 @@ class Scraper(BaseScraper):
         }
         return StockTickerPrice(formatted)
 
+
+async def main():
+    scraper = Scraper()
+    await scraper.run()
+
 # python src/job/stocks/scraper.py
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    scraper = Scraper(rate_limiter=RateLimit())
-    loop.run_until_complete(scraper.run())
+    asyncio.run(main())

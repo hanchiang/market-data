@@ -21,8 +21,8 @@ def get_most_recent_trading_day() -> datetime.datetime:
     day_of_week = ny_now.weekday()
     days_to_subtract = 0
 
-    if not has_market_closed():
-        days_to_subtract += 1
+    # if not has_market_closed():
+    #     days_to_subtract += 1
 
     if day_of_week == 5:
         days_to_subtract = 1
