@@ -60,7 +60,7 @@ async def change_in_open_interest(change_dir: Optional[str] = 'inc'):
     return {'data': data}
 
 @app.get("/stocks/price/{symbol}")
-async def stock_price(symbol: str, order='desc', interval='daily', num_records=20):
+async def stock_price(symbol: str, order='desc', interval='daily', num_records: int = 20):
     MAX_RECORDS = 100
 
     if num_records > MAX_RECORDS:
@@ -69,22 +69,4 @@ async def stock_price(symbol: str, order='desc', interval='daily', num_records=2
     tradfi_api = await get_tradfi_api()
     data = await tradfi_api.barchart.barchart_stocks.get_stock_prices(symbol=symbol, interval=interval, max_records=num_records, order=order)
 
-    # format string response into json
-    data['data'] = data.rstrip()
-    formatted_prices = list(map(format_stock_price_object, data['data'].split('\n')))
-    data['data'] = formatted_prices
-
     return {'data': data}
-
-# TODO: Refactor
-def format_stock_price_object(item):
-    (symbol, date, open, high, low, close, volume) = item.split(',')
-    return {
-        'symbol': symbol,
-        'date': date,
-        'open': open,
-        'high': high,
-        'low': low,
-        'close': close,
-        'volume': volume
-    }

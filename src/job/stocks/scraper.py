@@ -66,12 +66,11 @@ class Scraper(BaseScraper):
         print(f'Number of records to retrieve for {symbol}: {records_to_retrieve if records_to_retrieve else "all"}')
 
         tradfi_api = await get_tradfi_api()
-        res = await tradfi_api.barchart.barchart_stocks.get_stock_prices(symbol=symbol, max_records=records_to_retrieve)
-        data = res.rstrip()
+        data = await tradfi_api.barchart.barchart_stocks.get_stock_prices(symbol=symbol, max_records=records_to_retrieve)
 
         stock_ticker_price_to_insert = []
-        for row in data.split('\n'):
-            stock_ticker_price = self.format_stock_ticker_price(row)
+        for stock_ticker_price in data:
+            stock_ticker_price = StockTickerPrice(stock_ticker_price)
             stock_ticker_price_to_insert.append(StockTickerPrice.insert(stock_ticker_price))
         try:
             gathered_result: GatheredResults = await gather(*stock_ticker_price_to_insert)
@@ -87,22 +86,6 @@ class Scraper(BaseScraper):
         print(f'Took {end_time - start_time} seconds to get stock price for {symbol}')
         return True if gathered_result.success_count > 0 else False
 
-    # SPY,2023-02-10,405.86,408.44,405.01,408.04,70769700
-    def format_stock_ticker_price(self, obj) -> StockTickerPrice:
-        (symbol, date, open, high, low, close, volume) = obj.split(',')
-
-        (year, month, day) = date.split('-')
-
-        formatted = {
-            'symbol': symbol,
-            'date': datetime.date.today().replace(int(year), int(month), int(day)),
-            'open_price': float(open),
-            'high_price': float(high),
-            'low_price': float(low),
-            'close_price': float(close),
-            'volume': int(volume)
-        }
-        return StockTickerPrice(formatted)
 
 
 async def main():
