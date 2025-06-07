@@ -114,3 +114,6 @@ logs
 .mypy_cache
 
 adhoc_scripts
+my_readme.txt
+market_data.bak
+generated.py

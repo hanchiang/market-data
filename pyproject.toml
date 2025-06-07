@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "market-data"
+version = "0.1.0"
+description = ""
+authors = ["han chiang <yaphc@hotmail.com>"]
+readme = "README.md"
+packages = [{include = "market_data"}]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "0.87.0"
+asyncpg = "0.29.0"
+piccolo = "0.99.0"
+uvicorn = "0.19.0"
+python-dotenv = "0.21.0"
+asyncio-tools = "1.0.0"
+httpx = "^0.28.1"
+market-data-library = {git = "ssh://git@github.com/hanchiang/market_data_api.git", rev = "1.0.0"}
+
+
+[tool.poetry.group.dev.dependencies]
+# Development-only dependencies
+mypy = "0.991"                       # Static type checker
+mypy-extensions = "0.4.3"            # Additional mypy features
+black = "^23.9.1"                    # Code formatter
+ruff = "^0.0.289"                    # Fast Python linter
+
+[tool.black]
+# Black formatter configuration
+line-length = 88                     # Maximum line length
+target-version = ["py39"]            # Python version to target
+
+[tool.mypy]
+# MyPy type checker configuration
+python_version = 3.9                 # Python version for type checking
+strict = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "C", "N", "B", "I"]
+ignore = ["E501"]  # Ignore line length errors (handled by Black)

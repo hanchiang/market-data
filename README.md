@@ -133,6 +133,7 @@ Store options with the largest positive and negative open interest change
 * trade_time - timestamp
 
 # TODO:
+* market data library change refactor status: done
 * background job to remove option_price that have expired
 * job: largest change in open interest, most active options
 * Use poetry for dependency management
@@ -141,3 +142,4 @@ Store options with the largest positive and negative open interest change
 * Encode response data
 * Test
 * Get expirations date of a stock
+* Need to wait for timescaledb to support MACOS ventura....

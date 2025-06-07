@@ -1,25 +1,22 @@
 import asyncio
+import dataclasses
 import datetime
 from typing import List, Dict
 
-from barchart_api import BarChartAPI
 import time
-import pytz
+from zoneinfo import ZoneInfo
 from asyncio_tools import gather, GatheredResults
 
 from market_data_piccolo.tables.option_price import OptionPrice
-from src.job.options.option_price.base_scraper import BaseScraper, Result
-from src.job.rate_limit import RateLimit
+from src.job.options.base_scraper import BaseScraper, Result
 from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
     uncamel_case_dict, random_sleep
 
-options_api = BarChartAPI().options
-
+ny_tz = ZoneInfo("America/New_York")
 
 class Scraper(BaseScraper):
     async def run(self):
         now = datetime.datetime.now()
-        ny_tz = pytz.timezone('America/New_York')
         ny_now = now.astimezone(tz=ny_tz)
         start_time = time.time()
 
@@ -48,7 +45,8 @@ class Scraper(BaseScraper):
                 # TODO: post check
                 print(f"inserted data for {symbol} into DB?:", inserted)
             except Exception as e:
-                print("[run] error:", e)
+                print(f"[run] error: {e}")
+                raise e
                 # TODO: send telegram notification
 
         # TODO: send email/telegram notification
@@ -69,9 +67,8 @@ class Scraper(BaseScraper):
             self.result.set_fetch_count_for_symbol(symbol, 0)
 
         # Get expiration dates
+        # TODO: if expirations is in the past and they are already in DB, skip it
         expiration_dates_res = await self.get_expiration_dates(symbol)
-        [rate_limit_limit, rate_limit_remaining] = self.get_rate_limit_info_from_response(expiration_dates_res)
-        await self.rate_limiter.handle_rate_limit(rate_limit_limit, rate_limit_remaining)
         weekly_monthly_expirations = self.prepare_expiration_dates_list(expiration_dates_res)
 
         # Get options data for each expiration date
@@ -84,13 +81,11 @@ class Scraper(BaseScraper):
                 # TODO: Skip those options where trade_time < (latest trade_time saved for the base_symbol in DB) - 1 day
                 options_res = await self.get_options_data(symbol=symbol, expiration_date=ex_date,
                                                           expiration_type=expiration['expiration_type'])
-                print(f'Fetched {options_res["count"]} results')
-                self.result.increase_fetch_count_for_symbol(symbol, options_res['count'])
-                [rate_limit_limit, rate_limit_remaining] = self.get_rate_limit_info_from_response(options_res)
-                await self.rate_limiter.handle_rate_limit(rate_limit_limit, rate_limit_remaining)
+                print(f'Fetched {len(options_res)} results')
+                self.result.increase_fetch_count_for_symbol(symbol, len(options_res))
 
-                for option_data in options_res['data']:
-                    uncameled_option_data = uncamel_case_dict(option_data)['raw']
+                for option_data in options_res:
+                    uncameled_option_data = uncamel_case_dict(dataclasses.asdict(option_data))['raw']
                     # transform fields
                     if self.transform_fields(uncameled_option_data, tz=tz) is None:
                         print(f'transformed fields failed, skipping {uncameled_option_data}')
@@ -107,7 +102,7 @@ class Scraper(BaseScraper):
                         if gathered_result.exception_count > 0:
                             print(f'[scrape_ticker] There are {gathered_result.exception_count} insert DB errors:', gathered_result.exceptions)
                 except Exception as e:
-                    print(f'[scrape_ticker] error:', e)
+                    print(f'[scrape_ticker] error: {e}')
                     raise RuntimeError(e)
                 await random_sleep(0.1)
             await random_sleep(1)
@@ -116,8 +111,11 @@ class Scraper(BaseScraper):
         self.result.set_symbol_fetch_time_for_symbol(symbol, end_time - start_time)
         return True if self.result.db_insert_count > before_db_insert_count else False
 
+async def main():
+    scraper = Scraper(result=Result())
+    await scraper.run()
+
 # python src/job/options/scraper.py
+# TODO: try threadpool: https://stackoverflow.com/questions/31623194/asyncio-two-loops-for-different-i-o-tasks/62631135#62631135
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    scraper = Scraper(result=Result(), rate_limiter=RateLimit())
-    loop.run_until_complete(scraper.run())
+    asyncio.run(main())
