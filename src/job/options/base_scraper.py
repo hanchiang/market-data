@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 import datetime
-from typing import Tuple, List, Dict
+from typing import List, Dict
 
 from src.job.options.scrape_helper_class import Result
 from src.job.scrape_generic_util import get_year_month_day_from_yyyy_mm_dd
 from market_data_piccolo.tables.stock_ticker import StockTicker
 from src.data_source.barchart import get_tradfi_api
+from market_data_library.types import barchart_type
 
 class BaseScraper(ABC):
     symbols_to_scrape = []
@@ -71,23 +72,22 @@ class BaseScraper(ABC):
 
         return uncameled_option_data
 
-    def prepare_expiration_dates_list(self, expiration_dates_res) -> List[Dict[str, str]]:
-        expirations = expiration_dates_res['meta']['expirations']
+    def prepare_expiration_dates_list(self, expiration_dates_res: barchart_type.OptionsExpiration) -> List[Dict[str, str]]:
         return [
             {
                 'expiration_type': 'weekly',
-                'expiration_dates': expirations['weekly']
+                'expiration_dates': expiration_dates_res.weekly
             },
             {
                 'expiration_type': 'monthly',
-                'expiration_dates': expirations['monthly']
+                'expiration_dates': expiration_dates_res.monthly
             }
         ]
 
     def get_rate_limit_info_from_response(self, res):
         return [int(res['rate_limit']['limit']), int(res['rate_limit']['remaining'])]
 
-    async def get_expiration_dates(self, symbol: str) -> Tuple[List[str], List[str]]:
+    async def get_expiration_dates(self, symbol: str) -> barchart_type.OptionsExpiration:
         # TODO: init tradfi_api once only
         tradfi_api = await get_tradfi_api()
         res = await tradfi_api.barchart.barchart_options.get_options_expirations_for_ticker(symbol=symbol)
@@ -102,8 +102,8 @@ class BaseScraper(ABC):
                                                        expiration_type=expiration_type, order_by='tradeTime',
                                                        order_dir='desc')
 
-        if res['count'] < res['total']:
-            print(
-                'Count is less than total. This means that not all results are fetched. Please use a more stringent search criteria to reduce the result set')
+        # if res['count'] < res['total']:
+        #     print(
+        #         'Count is less than total. This means that not all results are fetched. Please use a more stringent search criteria to reduce the result set')
 
         return res

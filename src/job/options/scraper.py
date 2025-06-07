@@ -1,9 +1,10 @@
 import asyncio
+import dataclasses
 import datetime
 from typing import List, Dict
 
 import time
-import pytz
+from zoneinfo import ZoneInfo
 from asyncio_tools import gather, GatheredResults
 
 from market_data_piccolo.tables.option_price import OptionPrice
@@ -11,11 +12,11 @@ from src.job.options.base_scraper import BaseScraper, Result
 from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
     uncamel_case_dict, random_sleep
 
+ny_tz = ZoneInfo("America/New_York")
 
 class Scraper(BaseScraper):
     async def run(self):
         now = datetime.datetime.now()
-        ny_tz = pytz.timezone('America/New_York')
         ny_now = now.astimezone(tz=ny_tz)
         start_time = time.time()
 
@@ -80,11 +81,11 @@ class Scraper(BaseScraper):
                 # TODO: Skip those options where trade_time < (latest trade_time saved for the base_symbol in DB) - 1 day
                 options_res = await self.get_options_data(symbol=symbol, expiration_date=ex_date,
                                                           expiration_type=expiration['expiration_type'])
-                print(f'Fetched {options_res["count"]} results')
-                self.result.increase_fetch_count_for_symbol(symbol, options_res['count'])
+                print(f'Fetched {len(options_res)} results')
+                self.result.increase_fetch_count_for_symbol(symbol, len(options_res))
 
-                for option_data in options_res['data']:
-                    uncameled_option_data = uncamel_case_dict(option_data)['raw']
+                for option_data in options_res:
+                    uncameled_option_data = uncamel_case_dict(dataclasses.asdict(option_data))['raw']
                     # transform fields
                     if self.transform_fields(uncameled_option_data, tz=tz) is None:
                         print(f'transformed fields failed, skipping {uncameled_option_data}')

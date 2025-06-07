@@ -2,7 +2,7 @@
 
 # Pull the official Python slim image as the base image
 # Using slim variant to reduce image size while keeping necessary tools
-FROM python:3.10.16-slim as base
+FROM python:3.12-slim-bullseye as base
 
 # Set the working directory inside the container
 # All subsequent commands will be executed in this directory

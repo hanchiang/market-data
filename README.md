@@ -133,6 +133,7 @@ Store options with the largest positive and negative open interest change
 * trade_time - timestamp
 
 # TODO:
+* market data library change refactor status: done
 * background job to remove option_price that have expired
 * job: largest change in open interest, most active options
 * Use poetry for dependency management

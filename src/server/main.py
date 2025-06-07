@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from typing import Optional
 
 from src.db.index import run_migration, start_postgres_connection_pool, stop_postgres_connection_pool
-from src.data_source.barchart import get_tradfi_api
+from src.data_source.barchart import get_tradfi_api, init_tradfi_api
 
 app = FastAPI()
 
@@ -12,6 +12,7 @@ async def startup_event():
     print('FastAPI startup event')
     await start_postgres_connection_pool()
     await run_migration()
+    init_tradfi_api()
 
 @app.on_event('shutdown')
 async def shutdown_event():

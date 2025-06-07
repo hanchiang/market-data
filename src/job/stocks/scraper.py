@@ -3,7 +3,7 @@ import datetime
 from typing import List, Dict
 
 import time
-import pytz
+from zoneinfo import ZoneInfo
 from asyncio_tools import gather, GatheredResults
 
 from src.data_source.barchart import get_tradfi_api
@@ -12,10 +12,11 @@ from market_data_piccolo.tables.stock_ticker_price import StockTickerPrice
 from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, random_sleep
 from src.utils.date_util import get_most_recent_trading_day
 
+ny_tz = ZoneInfo("America/New_York")
+
 class Scraper(BaseScraper):
     async def run(self):
         now = datetime.datetime.now()
-        ny_tz = pytz.timezone('America/New_York')
         ny_now = now.astimezone(tz=ny_tz)
         start_time = time.time()
 
@@ -70,7 +71,15 @@ class Scraper(BaseScraper):
 
         stock_ticker_price_to_insert = []
         for stock_ticker_price in data:
-            stock_ticker_price = StockTickerPrice(stock_ticker_price)
+            stock_ticker_price = StockTickerPrice(
+                symbol=stock_ticker_price.symbol,
+                date=stock_ticker_price.date,
+                open_price=stock_ticker_price.open_price,
+                high_price=stock_ticker_price.high_price,
+                low_price=stock_ticker_price.low_price,
+                close_price=stock_ticker_price.close_price,
+                volume=stock_ticker_price.volume,
+            )
             stock_ticker_price_to_insert.append(StockTickerPrice.insert(stock_ticker_price))
         try:
             gathered_result: GatheredResults = await gather(*stock_ticker_price_to_insert)
