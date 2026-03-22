@@ -1,20 +1,22 @@
 import asyncio
 import datetime
-from typing import List, Dict
+from typing import Any
 
-from barchart_api import BarChartAPI
 import time
 import pytz
 from asyncio_tools import gather, GatheredResults
 
 from market_data_piccolo.tables.option_price import OptionPrice
+from src.market_data_library_adapter import (
+    option_price_to_db_row,
+    prepare_expiration_batches,
+)
 from src.job.options.option_price.base_scraper import BaseScraper, Result
-from src.job.rate_limit import RateLimit
-from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
-    uncamel_case_dict, random_sleep
-
-options_api = BarChartAPI().options
-
+from src.job.scrape_generic_util import (
+    stop_postgres_connection_pool,
+    start_postgres_connection_pool,
+    random_sleep,
+)
 
 class Scraper(BaseScraper):
     async def run(self):
@@ -39,27 +41,28 @@ class Scraper(BaseScraper):
         default_trade_time = default_trade_time.replace(hour=9, minute=30, second=0, microsecond=0)
 
         await start_postgres_connection_pool()
+        try:
+            await self.init_symbols_to_scrape()
+            print(f'{len(self.symbols_to_scrape)} symbols to scrape: {self.symbols_to_scrape}, default trade time: {default_trade_time}')
+            for symbol in self.symbols_to_scrape:
+                try:
+                    inserted = await self.scrape_ticker(symbol=symbol, tz=ny_tz)
+                    # TODO: post check
+                    print(f"inserted data for {symbol} into DB?:", inserted)
+                except Exception as e:
+                    print("[run] error:", e)
+                    # TODO: send telegram notification
 
-        await self.init_symbols_to_scrape()
-        print(f'{len(self.symbols_to_scrape)} symbols to scrape: {self.symbols_to_scrape}, default trade time: {default_trade_time}')
-        for symbol in self.symbols_to_scrape:
-            try:
-                inserted = await self.scrape_ticker(symbol=symbol, tz=ny_tz)
-                # TODO: post check
-                print(f"inserted data for {symbol} into DB?:", inserted)
-            except Exception as e:
-                print("[run] error:", e)
-                # TODO: send telegram notification
-
-        # TODO: send email/telegram notification
-        print(self.result.get_report())
-
-        await stop_postgres_connection_pool()
+            # TODO: send email/telegram notification
+            print(self.result.get_report())
+        finally:
+            await self.cleanup_options_api()
+            await stop_postgres_connection_pool()
 
         end_time = time.time()
         print(f'Took {end_time - start_time} seconds')
 
-    async def scrape_ticker(self, symbol: str, tz) -> List[Dict]:
+    async def scrape_ticker(self, symbol: str, tz: Any) -> bool:
         # TODO: should probably ignore strike prices that are more than a certain number outside
         # of the current stock price(e.g. 20%)
         start_time = time.time()
@@ -70,9 +73,7 @@ class Scraper(BaseScraper):
 
         # Get expiration dates
         expiration_dates_res = await self.get_expiration_dates(symbol)
-        [rate_limit_limit, rate_limit_remaining] = self.get_rate_limit_info_from_response(expiration_dates_res)
-        await self.rate_limiter.handle_rate_limit(rate_limit_limit, rate_limit_remaining)
-        weekly_monthly_expirations = self.prepare_expiration_dates_list(expiration_dates_res)
+        weekly_monthly_expirations = prepare_expiration_batches(expiration_dates_res)
 
         # Get options data for each expiration date
         before_db_insert_count = self.result.db_insert_count
@@ -84,18 +85,12 @@ class Scraper(BaseScraper):
                 # TODO: Skip those options where trade_time < (latest trade_time saved for the base_symbol in DB) - 1 day
                 options_res = await self.get_options_data(symbol=symbol, expiration_date=ex_date,
                                                           expiration_type=expiration['expiration_type'])
-                print(f'Fetched {options_res["count"]} results')
-                self.result.increase_fetch_count_for_symbol(symbol, options_res['count'])
-                [rate_limit_limit, rate_limit_remaining] = self.get_rate_limit_info_from_response(options_res)
-                await self.rate_limiter.handle_rate_limit(rate_limit_limit, rate_limit_remaining)
+                fetch_count = len(options_res)
+                print(f'Fetched {fetch_count} results')
+                self.result.increase_fetch_count_for_symbol(symbol, fetch_count)
 
-                for option_data in options_res['data']:
-                    uncameled_option_data = uncamel_case_dict(option_data)['raw']
-                    # transform fields
-                    if self.transform_fields(uncameled_option_data, tz=tz) is None:
-                        print(f'transformed fields failed, skipping {uncameled_option_data}')
-                        continue
-                    option_price = OptionPrice(uncameled_option_data)
+                for option_data in options_res:
+                    option_price = OptionPrice(option_price_to_db_row(option_data, tz=tz))
                     option_price_to_insert.append(OptionPrice.insert(option_price))
                 try:
                     if len(option_price_to_insert) > 0:
@@ -119,5 +114,5 @@ class Scraper(BaseScraper):
 # python src/job/options/scraper.py
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    scraper = Scraper(result=Result(), rate_limiter=RateLimit())
+    scraper = Scraper(result=Result())
     loop.run_until_complete(scraper.run())

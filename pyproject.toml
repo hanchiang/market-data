@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "market-data"
+version = "0.1.0"
+description = ""
+authors = ["han chiang <yaphc@hotmail.com>"]
+package-mode = false
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.0"
+asyncpg = "^0.29.0"
+piccolo = "0.99.0"
+pydantic = "^2.6.1"
+uvicorn = "0.19.0"
+market-data-library = {path = "../market-data-library"}
+python-dotenv = "0.21.0"
+pytz = "2022.6"
+asyncio-tools = "1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,203 @@
+import datetime
+import unittest
+
+from market_data_library.core.tradfi.barchart.type.barchart_type import (
+    OptionsExpiration,
+    OptionsPrice,
+    RawOptionsPrice,
+    StockPrice,
+)
+
+from src.market_data_library_adapter import (
+    option_price_to_db_row,
+    prepare_expiration_batches,
+    serialize_payload,
+    stock_price_to_db_row,
+)
+
+
+class MarketDataLibraryAdapterTest(unittest.TestCase):
+    def test_serialize_payload_drops_raw_field(self) -> None:
+        payload = OptionsPrice(
+            symbol="SPY250417C00570000",
+            baseSymbol="SPY",
+            strikePrice="570.00",
+            moneyness="-6.20%",
+            bidPrice="1.01",
+            midpoint="1.03",
+            askPrice="1.05",
+            lastPrice="1.04",
+            lowPrice="0.92",
+            openPrice="1.63",
+            highPrice="2.00",
+            priceChange="-7.09",
+            percentChange="-87.21%",
+            volume="9,583",
+            openInterest="16,010",
+            openInterestChange="-865",
+            volumeOpenInterestRatio="0.60",
+            volatility="22.62%",
+            optionType="Call",
+            daysToExpiration="14",
+            expirationDate="04/17/25",
+            expirationType="weekly",
+            tradeTime="04/03/25",
+            historicVolatility30d="23.26%",
+            averageVolatility="28.89%",
+            baseNextEarningsDate="N/A",
+            symbolType="stock",
+            delta="0.09500",
+            theta="-0.14765",
+            gamma="0.00711",
+            vega="0.17764",
+            rho="0.01916",
+            raw=RawOptionsPrice(
+                symbol="SPY250417C00570000",
+                baseSymbol="SPY",
+                strikePrice=570.0,
+                moneyness=-6.2,
+                bidPrice=1.01,
+                midpoint=1.03,
+                askPrice=1.05,
+                lastPrice=1.04,
+                lowPrice=0.92,
+                openPrice=1.63,
+                highPrice=2.0,
+                priceChange=-7.09,
+                percentChange=-87.21,
+                volume=9583,
+                openInterest=16010,
+                openInterestChange=-865,
+                volumeOpenInterestRatio=0.6,
+                volatility=22.62,
+                optionType="Call",
+                daysToExpiration=14,
+                expirationDate="2025-04-17",
+                expirationType="weekly",
+                tradeTime=1743686400,
+                historicVolatility30d=23.26,
+                averageVolatility=28.89,
+                baseNextEarningsDate=None,
+                symbolType="stock",
+                delta=0.095,
+                theta=-0.14765,
+                gamma=0.00711,
+                vega=0.17764,
+                rho=0.01916,
+            ),
+        )
+
+        serialized = serialize_payload(payload)
+
+        self.assertEqual(serialized["baseSymbol"], "SPY")
+        self.assertNotIn("raw", serialized)
+
+    def test_stock_price_to_db_row(self) -> None:
+        row = stock_price_to_db_row(
+            StockPrice(
+                symbol="SPY",
+                date=datetime.date(2025, 4, 17),
+                open_price=500.0,
+                high_price=501.0,
+                low_price=499.0,
+                close_price=500.5,
+                volume=100,
+            )
+        )
+
+        self.assertEqual(row["symbol"], "SPY")
+        self.assertEqual(row["date"], datetime.date(2025, 4, 17))
+        self.assertEqual(row["close_price"], 500.5)
+
+    def test_prepare_expiration_batches(self) -> None:
+        batches = prepare_expiration_batches(
+            OptionsExpiration(monthly=["2025-05-16"], weekly=["2025-04-25"])
+        )
+
+        self.assertEqual(
+            batches,
+            [
+                {"expiration_type": "weekly", "expiration_dates": ["2025-04-25"]},
+                {"expiration_type": "monthly", "expiration_dates": ["2025-05-16"]},
+            ],
+        )
+
+    def test_option_price_to_db_row(self) -> None:
+        option = OptionsPrice(
+            symbol="SPY250417C00570000",
+            baseSymbol="SPY",
+            strikePrice="570.00",
+            moneyness="-6.20%",
+            bidPrice="1.01",
+            midpoint="1.03",
+            askPrice="1.05",
+            lastPrice="1.04",
+            lowPrice="0.92",
+            openPrice="1.63",
+            highPrice="2.00",
+            priceChange="-7.09",
+            percentChange="-87.21%",
+            volume="9,583",
+            openInterest="16,010",
+            openInterestChange="-865",
+            volumeOpenInterestRatio="0.60",
+            volatility="22.62%",
+            optionType="Call",
+            daysToExpiration="14",
+            expirationDate="04/17/25",
+            expirationType="weekly",
+            tradeTime="04/03/25",
+            historicVolatility30d="23.26%",
+            averageVolatility="28.89%",
+            baseNextEarningsDate="N/A",
+            symbolType="stock",
+            delta="0.09500",
+            theta="-0.14765",
+            gamma="0.00711",
+            vega="0.17764",
+            rho="0.01916",
+            raw=RawOptionsPrice(
+                symbol="SPY250417C00570000",
+                baseSymbol="SPY",
+                strikePrice=570.0,
+                moneyness=-6.2,
+                bidPrice=1.01,
+                midpoint=1.03,
+                askPrice=1.05,
+                lastPrice=1.04,
+                lowPrice=0.92,
+                openPrice=1.63,
+                highPrice=2.0,
+                priceChange=-7.09,
+                percentChange=-87.21,
+                volume=9583,
+                openInterest=16010,
+                openInterestChange=-865,
+                volumeOpenInterestRatio=0.6,
+                volatility=22.62,
+                optionType="Call",
+                daysToExpiration=14,
+                expirationDate="2025-04-17",
+                expirationType="weekly",
+                tradeTime=1743686400,
+                historicVolatility30d=23.26,
+                averageVolatility=28.89,
+                baseNextEarningsDate=None,
+                symbolType="stock",
+                delta=0.095,
+                theta=-0.14765,
+                gamma=0.00711,
+                vega=0.17764,
+                rho=0.01916,
+            ),
+        )
+
+        row = option_price_to_db_row(option, datetime.timezone.utc)
+
+        self.assertEqual(row["base_symbol"], "SPY")
+        self.assertEqual(row["expiration_date"], datetime.date(2025, 4, 17))
+        self.assertEqual(row["trade_time"], datetime.datetime.fromtimestamp(1743686400, tz=datetime.timezone.utc))
+
+
+if __name__ == "__main__":
+    unittest.main()

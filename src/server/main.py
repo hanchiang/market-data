@@ -1,24 +1,38 @@
 from fastapi import FastAPI
 from typing import Optional
 
-from barchart_api import BarChartAPI
+from src.market_data_library_adapter import serialize_payload
+from market_data_library.core.tradfi.api import BarchartAPI
 
 from src.db.index import run_migration, start_postgres_connection_pool, stop_postgres_connection_pool
 
 app = FastAPI()
 
-barchart = BarChartAPI()
+barchart: Optional[BarchartAPI] = None
+
+
+def get_barchart_api() -> BarchartAPI:
+    if barchart is None:
+        raise RuntimeError("Barchart API is not initialized")
+    return barchart
 
 @app.on_event("startup")
 async def startup_event():
+    global barchart
     print('FastAPI startup event')
+    barchart = BarchartAPI()
     await start_postgres_connection_pool()
     await run_migration()
 
 @app.on_event('shutdown')
 async def shutdown_event():
+    global barchart
     print('FastAPI shutdown event')
     await stop_postgres_connection_pool()
+    if barchart is not None:
+        await barchart.barchart_stocks.cleanup()
+        await barchart.barchart_options.cleanup()
+        barchart = None
 
 @app.get("/healthz")
 async def health_check():
@@ -31,51 +45,32 @@ async def options_for_ticker(
     symbol: str, order_dir = '', expiration_type = '', expiration_date: Optional[str] = None,
     group_by: Optional[str] = '', order_by: Optional[str] = ''
 ):
-    data = await barchart.options.get_options_for_ticker(symbol=symbol, expiration_type=expiration_type,
+    data = await get_barchart_api().barchart_options.get_options_for_ticker(symbol=symbol, expiration_type=expiration_type,
         expiration_date=expiration_date, group_by=group_by, order_by=order_by, order_dir=order_dir
     )
 
-    return {'data': data}
+    return {'data': serialize_payload(data)}
 
 @app.get("/options/{symbol}/expirations")
 async def options_expirations_for_ticker(symbol: str):
     # TODO: cache
-    data = await barchart.options.get_options_expirations_for_ticker(symbol=symbol)
-    return {'data': data}
+    data = await get_barchart_api().barchart_options.get_options_expirations_for_ticker(symbol=symbol)
+    return {'data': serialize_payload(data)}
 
 @app.get("/options-most-active")
 async def most_active_options():
-    data = await barchart.options.get_most_active_options()
-    return {'data' : data}
+    data = await get_barchart_api().barchart_options.get_most_active_options()
+    return {'data': serialize_payload(data)}
 
 @app.get("/options-change-in-open-interest")
 async def change_in_open_interest(change_dir: Optional[str] = 'inc'):
-    data = await barchart.options.get_change_in_options_interest(change_dir=change_dir)
-    return {'data': data}
+    data = await get_barchart_api().barchart_options.get_change_in_options_interest(change_dir=change_dir)
+    return {'data': serialize_payload(data)}
 
 @app.get("/stocks/price/{symbol}")
 async def stock_price(symbol: str, order='desc', interval='daily', num_records=20):
     MAX_RECORDS = 100
     if num_records > MAX_RECORDS:
         num_records = MAX_RECORDS
-    data = await barchart.stocks.get_stock_prices(symbol=symbol, interval=interval, max_records=num_records, order=order)
-
-    # format string response into json
-    data['data'] = data['data'].rstrip()
-    formatted_prices = list(map(format_stock_price_object, data['data'].split('\n')))
-    data['data'] = formatted_prices
-
-    return {'data': data}
-
-# TODO: Refactor
-def format_stock_price_object(item):
-    (symbol, date, open, high, low, close, volume) = item.split(',')
-    return {
-        'symbol': symbol,
-        'date': date,
-        'open': open,
-        'high': high,
-        'low': low,
-        'close': close,
-        'volume': volume
-    }
+    data = await get_barchart_api().barchart_stocks.get_stock_prices(symbol=symbol, interval=interval, max_records=num_records, order=order)
+    return {'data': serialize_payload(data)}
