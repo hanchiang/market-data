@@ -114,6 +114,10 @@ logs
 .mypy_cache
 
 adhoc_scripts
-my_readme.txt
-market_data.bak
+
+# Local workspace artifacts
+._.DS_Store
 generated.py
+market_data.bak
+settings.json
+my_readme.txt

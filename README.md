@@ -10,14 +10,17 @@ There are 2 parts to the project:
   * `src/server/main.py`
 
 # Set up
-* Install [python 3](https://www.python.org/downloads/)
-* Create a virtual environment: `python3 -m venv venv`
-* Activate virtual environment: `source venv/bin/activate`
-* Install dependencies: `pip -r install requirements.txt`
+* Install [Python 3.12](https://www.python.org/downloads/)
+* Copy environment template: `cp .env.example .env`
+* Configure database settings in `.env`
+* Install dependencies with Poetry: `poetry install --no-root`
+  * `market-data-library` is resolved from the sibling directory `../market-data-library`
 * Set PYTHONPATH: `export PYTHONPATH=$(pwd)`
-* Start server: `uvicorn --reload --app-dir src main:app`
+* Start server: `poetry run uvicorn --reload --app-dir src/server main:app`
   * Server runs at: `localhost:8000`
   * API documentation runs at: `localhost:8000/docs`, `localhost:8000/redoc`.
+* Legacy setup still exists for Docker and `requirements.txt`, but the tracked local development path is Poetry plus the sibling `market-data-library` repo.
+* Before using the API or scrapers, ensure Postgres is reachable and Piccolo can run migrations with the configured credentials.
 
 # Tech stack
 * Language: Python
@@ -136,7 +139,6 @@ Store options with the largest positive and negative open interest change
 * market data library change refactor status: done
 * background job to remove option_price that have expired
 * job: largest change in open interest, most active options
-* Use poetry for dependency management
 * Reporting: number of stock ticker in option_price table, number of rows for each stock ticker
 * Confirm whether options data is indeed a daily snapshot that includes all past trade days
 * Encode response data

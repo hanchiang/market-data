@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
+from market_data_library.core.tradfi.api import BarchartAPI
+from market_data_library.core.tradfi.barchart.stocks.stocks import StocksService
 
 from market_data_piccolo.tables.stock_ticker import StockTicker
 
@@ -8,7 +11,7 @@ class BaseScraper(ABC):
     symbols_to_scrape = []
 
     def __init__(self):
-        pass
+        self.stocks_api: Optional[StocksService] = None
 
     @abstractmethod
     async def run(self):
@@ -22,5 +25,12 @@ class BaseScraper(ABC):
         self.symbols_to_scrape = list(map(lambda r: r['symbol'], res))
         return
 
-    def get_rate_limit_info_from_response(self, res):
-        return [int(res['rate_limit']['limit']), int(res['rate_limit']['remaining'])]
+    def get_stocks_api(self) -> StocksService:
+        if self.stocks_api is None:
+            self.stocks_api = BarchartAPI().barchart_stocks
+        return self.stocks_api
+
+    async def cleanup_stocks_api(self) -> None:
+        if self.stocks_api is not None:
+            await self.stocks_api.cleanup()
+            self.stocks_api = None

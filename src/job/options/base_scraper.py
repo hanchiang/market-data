@@ -1,18 +1,23 @@
 from abc import ABC, abstractmethod
+from typing import Optional, List, Dict
 import datetime
-from typing import List, Dict
 
-from src.job.options.scrape_helper_class import Result
-from src.job.scrape_generic_util import get_year_month_day_from_yyyy_mm_dd
+from market_data_library.core.tradfi.api import BarchartAPI
+from market_data_library.core.tradfi.barchart.options.options import OptionService
+from market_data_library.core.tradfi.barchart.type.barchart_type import (
+    OptionsExpiration,
+    OptionsPrice,
+)
+
+from src.job.options.option_price.scrape_helper_class import Result
 from market_data_piccolo.tables.stock_ticker import StockTicker
-from src.data_source.barchart import get_tradfi_api
-from market_data_library.types import barchart_type
 
 class BaseScraper(ABC):
     symbols_to_scrape = []
 
     def __init__(self, result: Result):
         self.result = result
+        self.options_api: Optional[OptionService] = None
 
     @abstractmethod
     async def run(self):
@@ -26,11 +31,24 @@ class BaseScraper(ABC):
         self.symbols_to_scrape = list(map(lambda r: r['symbol'], res))
         return
 
+    def get_options_api(self) -> OptionService:
+        if self.options_api is None:
+            self.options_api = BarchartAPI().barchart_options
+        return self.options_api
+
+    async def cleanup_options_api(self) -> None:
+        if self.options_api is not None:
+            await self.options_api.cleanup()
+            self.options_api = None
+
     def print_report(self):
         print(self.result.get_report())
 
     def get_report(self):
         return self.result.get_report()
+
+    async def get_expiration_dates(self, symbol: str) -> OptionsExpiration:
+        res = await self.get_options_api().get_options_expirations_for_ticker(symbol=symbol)
 
     def transform_fields(self, uncameled_option_data, tz):
         """
@@ -87,23 +105,17 @@ class BaseScraper(ABC):
     def get_rate_limit_info_from_response(self, res):
         return [int(res['rate_limit']['limit']), int(res['rate_limit']['remaining'])]
 
-    async def get_expiration_dates(self, symbol: str) -> barchart_type.OptionsExpiration:
-        # TODO: init tradfi_api once only
-        tradfi_api = await get_tradfi_api()
-        res = await tradfi_api.barchart.barchart_options.get_options_expirations_for_ticker(symbol=symbol)
+    async def get_expiration_dates(self, symbol: str) -> Tuple[List[str], List[str]]:
+        res = await options_api.get_options_expirations_for_ticker(symbol=symbol)
         return res
 
-    async def get_options_data(self, symbol: str, expiration_date: str, expiration_type: str):
-        # TODO: pass in fields?
-        tradfi_api = await get_tradfi_api()
-        fields = [
-            "symbol,baseSymbol,strikePrice,moneyness,bidPrice,midpoint,askPrice,lastPrice,priceChange,percentChange,volume,openInterest,volumeOpenInterestRatio,volatility,optionType,daysToExpiration,expirationDate,tradeTime,averageVolatility,historicVolatility30d,baseNextEarningsDate,expirationType,delta,theta,gamma,vega,rho"]
-        res = await tradfi_api.barchart.barchart_options.get_options_for_ticker(symbol=symbol, expiration_date=expiration_date,
-                                                       expiration_type=expiration_type, order_by='tradeTime',
-                                                       order_dir='desc')
-
-        # if res['count'] < res['total']:
-        #     print(
-        #         'Count is less than total. This means that not all results are fetched. Please use a more stringent search criteria to reduce the result set')
-
-        return res
+    async def get_options_data(
+        self, symbol: str, expiration_date: str, expiration_type: str
+    ) -> list[OptionsPrice]:
+        return await self.get_options_api().get_options_for_ticker(
+            symbol=symbol,
+            expiration_date=expiration_date,
+            expiration_type=expiration_type,
+            order_by='tradeTime',
+            order_dir='desc',
+        )

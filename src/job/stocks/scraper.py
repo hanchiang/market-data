@@ -6,6 +6,7 @@ import time
 from zoneinfo import ZoneInfo
 from asyncio_tools import gather, GatheredResults
 
+from src.market_data_library_adapter import stock_price_to_db_row
 from src.data_source.barchart import get_tradfi_api
 from src.job.stocks.base_scraper import BaseScraper
 from market_data_piccolo.tables.stock_ticker_price import StockTickerPrice
@@ -24,29 +25,27 @@ class Scraper(BaseScraper):
         most_recent_trade_day = get_most_recent_trading_day()
 
         await start_postgres_connection_pool()
-
-        await self.init_symbols_to_scrape()
-        print(f'{len(self.symbols_to_scrape)} symbols to scrape: {self.symbols_to_scrape}, trade day: {str(most_recent_trade_day)}')
-        for symbol in self.symbols_to_scrape:
-            try:
-                inserted = await self.scrape_ticker(symbol=symbol)
-                # TODO: post check
-                print(f"inserted data for {symbol} into DB?:", inserted)
-                await random_sleep(1)
-            except Exception as e:
-                print(f"[run] error: {e}")
-                raise e
-                # TODO: send telegram notification
-
-        # TODO: send email/telegram notification
-        # print(self.result.get_report())
-
-        await stop_postgres_connection_pool()
+        try:
+            await self.init_symbols_to_scrape()
+            print(f'{len(self.symbols_to_scrape)} symbols to scrape: {self.symbols_to_scrape}, trade day: {str(most_recent_trade_day)}')
+            for symbol in self.symbols_to_scrape:
+                try:
+                    inserted = await self.scrape_ticker(symbol=symbol)
+                    # TODO: post check
+                    print(f"inserted data for {symbol} into DB?:", inserted)
+                    await random_sleep(1)
+                except Exception as e:
+                    print("[run] error:", e)
+                    raise e
+                    # TODO: send telegram notification
+        finally:
+            await self.cleanup_stocks_api()
+            await stop_postgres_connection_pool()
 
         end_time = time.time()
         print(f'Took {end_time - start_time} seconds')
 
-    async def scrape_ticker(self, symbol: str) -> List[Dict]:
+    async def scrape_ticker(self, symbol: str) -> bool | None:
         latest_stock_ticker_price = await StockTickerPrice.select(StockTickerPrice.date)\
             .where(StockTickerPrice.symbol == symbol)\
             .order_by(StockTickerPrice.date, ascending=False).limit(1).run()
@@ -66,20 +65,11 @@ class Scraper(BaseScraper):
             print(f'Stock price for {symbol} has not been saved before. Getting all historical prices')
         print(f'Number of records to retrieve for {symbol}: {records_to_retrieve if records_to_retrieve else "all"}')
 
-        tradfi_api = await get_tradfi_api()
-        data = await tradfi_api.barchart.barchart_stocks.get_stock_prices(symbol=symbol, max_records=records_to_retrieve)
+        stock_prices = await self.get_stocks_api().get_stock_prices(symbol=symbol, max_records=records_to_retrieve)
 
         stock_ticker_price_to_insert = []
-        for stock_ticker_price in data:
-            stock_ticker_price = StockTickerPrice(
-                symbol=stock_ticker_price.symbol,
-                date=stock_ticker_price.date,
-                open_price=stock_ticker_price.open_price,
-                high_price=stock_ticker_price.high_price,
-                low_price=stock_ticker_price.low_price,
-                close_price=stock_ticker_price.close_price,
-                volume=stock_ticker_price.volume,
-            )
+        for stock_price in stock_prices:
+            stock_ticker_price = StockTickerPrice(stock_price_to_db_row(stock_price))
             stock_ticker_price_to_insert.append(StockTickerPrice.insert(stock_ticker_price))
         try:
             gathered_result: GatheredResults = await gather(*stock_ticker_price_to_insert)
@@ -95,12 +85,8 @@ class Scraper(BaseScraper):
         print(f'Took {end_time - start_time} seconds to get stock price for {symbol}')
         return True if gathered_result.success_count > 0 else False
 
-
-
-async def main():
-    scraper = Scraper()
-    await scraper.run()
-
 # python src/job/stocks/scraper.py
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    scraper = Scraper()
+    loop.run_until_complete(scraper.run())

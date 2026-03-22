@@ -40,6 +40,10 @@ RUN mkdir -p /root/.ssh && \
 COPY secret/id_rsa /root/.ssh/id_rsa
 RUN chmod 600 /root/.ssh/id_rsa
 
+ARG MARKET_DATA_LIBRARY_TAG
+RUN if [ -z "$MARKET_DATA_LIBRARY_TAG" ]; then echo "MARKET_DATA_LIBRARY_TAG is required"; exit 1; fi
+RUN pip install git+ssh://git@github.com/hanchiang/market_data_api.git@$MARKET_DATA_LIBRARY_TAG && rm /root/.ssh/id_rsa
+
 # Install Python dependencies using Poetry without creating a virtual environment
 # virtualenvs.create false: Install packages directly in system Python
 # --no-root: Don't install the project itself as a package
