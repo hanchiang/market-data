@@ -1,5 +1,4 @@
 import asyncio
-import dataclasses
 import datetime
 from typing import Any
 
@@ -12,14 +11,12 @@ from src.market_data_library_adapter import (
     option_price_to_db_row,
     prepare_expiration_batches,
 )
-from src.job.options.option_price.base_scraper import BaseScraper, Result
+from src.job.options.base_scraper import BaseScraper, Result
 from src.job.scrape_generic_util import (
-    stop_postgres_connection_pool,
-    start_postgres_connection_pool,
     random_sleep,
+    start_postgres_connection_pool,
+    stop_postgres_connection_pool,
 )
-from src.job.scrape_generic_util import stop_postgres_connection_pool, start_postgres_connection_pool, \
-    uncamel_case_dict, random_sleep
 
 ny_tz = ZoneInfo("America/New_York")
 
@@ -54,7 +51,7 @@ class Scraper(BaseScraper):
                     # TODO: post check
                     print(f"inserted data for {symbol} into DB?:", inserted)
                 except Exception as e:
-                    print("[run] error:", e)
+                    print(f"[run] error: {e}")
                     raise e
                     # TODO: send telegram notification
 
@@ -124,6 +121,4 @@ async def main():
 # python src/job/options/scraper.py
 # TODO: try threadpool: https://stackoverflow.com/questions/31623194/asyncio-two-loops-for-different-i-o-tasks/62631135#62631135
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    scraper = Scraper(result=Result())
-    loop.run_until_complete(scraper.run())
+    asyncio.run(main())

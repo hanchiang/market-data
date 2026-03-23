@@ -11,6 +11,8 @@ There are 2 parts to the project:
 
 # Set up
 * Install [Python 3.12](https://www.python.org/downloads/)
+  * Supported local interpreter range is `>=3.12,<3.14`
+  * Python 3.14 is currently not supported because `asyncpg==0.29.0` does not build cleanly there
 * Copy environment template: `cp .env.example .env`
 * Configure database settings in `.env`
 * Install dependencies with Poetry: `poetry install --no-root`
