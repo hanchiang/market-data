@@ -18,11 +18,58 @@ There are 2 parts to the project:
 * Install dependencies with Poetry: `poetry install --no-root`
   * `market-data-library` is resolved from the sibling directory `../market-data-library`
 * Set PYTHONPATH: `export PYTHONPATH=$(pwd)`
+* Run migrations before starting the app: `poetry run piccolo migrations forwards market_data_piccolo --trace`
 * Start server: `poetry run uvicorn --reload --app-dir src/server main:app`
   * Server runs at: `localhost:8000`
   * API documentation runs at: `localhost:8000/docs`, `localhost:8000/redoc`.
 * Legacy setup still exists for Docker and `requirements.txt`, but the tracked local development path is Poetry plus the sibling `market-data-library` repo.
-* Before using the API or scrapers, ensure Postgres is reachable and Piccolo can run migrations with the configured credentials.
+* Before using the API or scrapers, ensure Postgres is reachable and Piccolo migrations have already been applied with the configured credentials.
+
+# Run Modes
+* Dockerized DB, app running locally:
+  * Start only the database: `docker compose up -d db`
+  * In `.env`, set `POSTGRES_HOST=localhost`
+  * Run migrations locally: `poetry run piccolo migrations forwards market_data_piccolo --trace`
+  * Set `PYTHONPATH`: `export PYTHONPATH=$(pwd)`
+  * Start the app locally: `poetry run uvicorn --reload --app-dir src/server main:app`
+* Fully Dockerized app and DB:
+  * Use the compose workflow in the Docker section below
+
+# Docker
+* You can also start the full stack with `docker compose up -d`
+  * Compose will start `db`, run the one-shot `migrate` service, then start `backend`
+* Default local compose path uses the sibling `../market-data-library` repo:
+  * `docker compose up -d db`
+  * `docker compose run --rm migrate`
+  * `docker compose up backend`
+  * Inside compose, the backend and migration service connect to Postgres with `POSTGRES_HOST=db`
+* For consumer-style testing against a git-installed `market-data-library`, build the alternate target:
+  * `DOCKER_BUILDKIT=1 docker build --target dev-git --ssh default --build-arg MARKET_DATA_LIBRARY_REF=1.0.0 -t market-data:dev-git .`
+  * This Git validation path requires SSH access to the private GitHub repository.
+
+# Operations
+* Piccolo migration status check:
+  * `poetry run piccolo migrations check`
+* Create a new Piccolo migration:
+  * `poetry run piccolo migrations new market_data_piccolo`
+* Apply migrations locally:
+  * `poetry run piccolo migrations forwards market_data_piccolo --trace`
+* Apply migrations in Docker:
+  * `docker compose run --rm migrate`
+* Roll back migrations locally:
+  * `poetry run piccolo migrations backwards market_data_piccolo --trace`
+* Roll back all migrations locally:
+  * `poetry run piccolo migrations backwards market_data_piccolo --migration_id=all --trace --auto_agree`
+* Show compose service status:
+  * `docker compose ps`
+* Show compose logs:
+  * `docker compose logs --tail 100 backend migrate db`
+* Stop the Dockerized stack:
+  * `docker compose down`
+* Run the options scraper locally:
+  * `poetry run python src/job/options/scraper.py`
+* Run the stocks scraper locally:
+  * `poetry run python src/job/stocks/scraper.py`
 
 # Tech stack
 * Language: Python

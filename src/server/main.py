@@ -4,8 +4,7 @@ from typing import Optional
 from src.market_data_library_adapter import serialize_payload
 from market_data_library.core.tradfi.api import BarchartAPI
 
-from src.db.index import run_migration, start_postgres_connection_pool, stop_postgres_connection_pool
-from src.data_source.barchart import get_tradfi_api, init_tradfi_api
+from src.db.index import start_postgres_connection_pool, stop_postgres_connection_pool
 
 app = FastAPI()
 
@@ -23,8 +22,6 @@ async def startup_event():
     print('FastAPI startup event')
     barchart = BarchartAPI()
     await start_postgres_connection_pool()
-    await run_migration()
-    init_tradfi_api()
 
 @app.on_event('shutdown')
 async def shutdown_event():

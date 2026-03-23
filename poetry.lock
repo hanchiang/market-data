@@ -820,10 +820,8 @@ selenium-stealth = "^1.0.6"
 tenacity = "^9.1.2"
 
 [package.source]
-type = "git"
-url = "ssh://git@github.com/hanchiang/market_data_api.git"
-reference = "1.0.0"
-resolved_reference = "dd76f6e6a93dcd8d86f655bb3b05c4c53c3c9231"
+type = "directory"
+url = "../market-data-library"
 
 [[package]]
 name = "markupsafe"
@@ -1861,4 +1859,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "68c675c7e151068e7084062aaa637a55db255ea547e20aaf959c465b756560b1"
+content-hash = "6017b2b113ee827a296e9b25c0ddcfe82f049bc06eba1617a0492446b27ac283"
