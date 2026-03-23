@@ -2,6 +2,7 @@
 .gitignore
 .vscode
 .mypy_cache
+.venv
 venv
 Dockerfile
 my_readme.txt
@@ -9,3 +10,5 @@ README.md
 logs
 adhoc_scripts
 *.bak
+.env
+secret
