@@ -1,10 +1,11 @@
 # market-data Agent Guide
 
-Last verified: 2026-03-23
+Last verified: 2026-04-01
 
 ## Scope
 - Applies to `market-data/` unless a deeper `AGENTS.md` overrides it.
 - Follow the workspace root `AGENTS.md` first for cross-repo rules.
+- Use workspace-root task memory for canonical active work. Any repo-local `ACTIVE_TASK.md` or `ACTIVE_TASKS/` paths are scratch only unless the human explicitly asks for them.
 
 ## Repo Role
 - Legacy FastAPI server for stock and options data scraping plus storage.
@@ -21,12 +22,13 @@ Last verified: 2026-03-23
 - `my_readme.md`: local scratchpad of useful commands and workflows for this repo. Treat it as a helpful operator reference, not canonical source of truth; validate commands against the current code and docs before relying on them.
 
 ## Repo-Specific Rules
-- Verify imports and dependency wiring before changing behavior. `pyproject.toml` currently pins `market-data-library` from git, while local workflows may also use the sibling `../market-data-library` repo.
+- Verify imports and dependency wiring before changing behavior. Local Poetry installs currently resolve `market-data-library` from the sibling `../market-data-library` repo, while alternate Docker validation can use a git-tagged library build.
 - Do not claim end-to-end runtime validation unless the database environment and library dependency path were both verified locally.
 - Prefer small, targeted fixes. This repo has legacy patterns, incomplete TODOs, and little automated test coverage.
 - If a change affects shared provider behavior, move or mirror the logic into `market-data-library/` instead of growing more duplicated scraper code here.
 
 ## Validation
+- Use workspace `EVALS.md` as the default validation matrix for this repo.
 - Minimum syntax check: `uv run python -m py_compile $(rg --files -g '*.py')`
 - If you touch API routes or startup code, inspect `src/server/main.py`, `src/db/index.py`, and the environment contract in `src/config/config.py` together.
 - If you touch schema-related code, review the matching table definitions and migrations under `market_data_piccolo/`.
