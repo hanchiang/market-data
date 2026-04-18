@@ -45,6 +45,10 @@ There are 2 parts to the project:
 * Before any Docker build that needs `market-data-library`, create the build secret used by Dockerfiles:
   * `mkdir -p secret`
   * `printf '%s' "$GITHUB_TOKEN_WITH_REPO_ACCESS" > secret/github_token`
+* Future CI note:
+  * when this repo adds CI or CD workflows that need to install the private `market-data-library` dependency, mirror the backend repo pattern instead of hard-coding a personal token
+  * provide GitHub App credentials such as `MARKET_DATA_LIBRARY_GITHUB_APP_ID` and `MARKET_DATA_LIBRARY_GITHUB_APP_PRIVATE_KEY`
+  * mint a short-lived installation token in CI, then use that token for `poetry install` and any Docker `secret/github_token` build-secret step
 * You can also start the full stack with `docker compose up -d`
   * Compose will start `db`, run the one-shot `migrate` service, then start `backend`
 * Default local compose path uses the released git-tagged `market-data-library` package via the locked Poetry dependency graph:
