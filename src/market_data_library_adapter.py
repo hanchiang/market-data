@@ -1,5 +1,6 @@
 import dataclasses
 import datetime
+from collections.abc import Mapping
 from typing import Any
 
 from market_data_library.core.tradfi.barchart.type.barchart_type import (
@@ -48,38 +49,68 @@ def prepare_expiration_batches(expirations: OptionsExpiration) -> list[dict[str,
     ]
 
 
+def _get_raw_option_value(raw: Any, field: str) -> Any:
+    if isinstance(raw, Mapping):
+        if field in raw:
+            return raw[field]
+    elif hasattr(raw, field):
+        return getattr(raw, field)
+
+    raise KeyError(f"Option payload raw is missing required field: {field}")
+
+
+def _resolve_option_trade_time(
+    raw: Any,
+    tz: datetime.tzinfo,
+    default_trade_time: datetime.datetime | None,
+) -> datetime.datetime:
+    raw_trade_time = _get_raw_option_value(raw, "tradeTime")
+
+    try:
+        return datetime.datetime.fromtimestamp(raw_trade_time, tz=tz)
+    except (OSError, OverflowError, TypeError, ValueError):
+        if default_trade_time is not None:
+            return default_trade_time.astimezone(tz)
+
+        raise ValueError(f"Invalid option tradeTime: {raw_trade_time}") from None
+
+
 def option_price_to_db_row(
-    option_price: OptionsPrice, tz: datetime.tzinfo
+    option_price: OptionsPrice,
+    tz: datetime.tzinfo,
+    default_trade_time: datetime.datetime | None = None,
 ) -> dict[str, Any]:
     raw = option_price.raw
-    expiration_date = datetime.date.fromisoformat(raw.expirationDate)
-    trade_time = datetime.datetime.fromtimestamp(raw.tradeTime, tz=tz)
+    expiration_date = datetime.date.fromisoformat(
+        _get_raw_option_value(raw, "expirationDate")
+    )
+    trade_time = _resolve_option_trade_time(raw, tz, default_trade_time)
 
     return {
-        "symbol": raw.symbol,
-        "base_symbol": raw.baseSymbol,
+        "symbol": _get_raw_option_value(raw, "symbol"),
+        "base_symbol": _get_raw_option_value(raw, "baseSymbol"),
         "trade_time": trade_time,
-        "option_type": raw.optionType,
-        "strike_price": raw.strikePrice,
-        "open_price": raw.openPrice,
-        "high_price": raw.highPrice,
-        "low_price": raw.lowPrice,
-        "last_price": raw.lastPrice,
-        "moneyness": raw.moneyness,
-        "bid_price": raw.bidPrice,
-        "midpoint": raw.midpoint,
-        "ask_price": raw.askPrice,
-        "volume": raw.volume,
-        "open_interest": raw.openInterest,
-        "volatility": raw.volatility,
+        "option_type": _get_raw_option_value(raw, "optionType"),
+        "strike_price": _get_raw_option_value(raw, "strikePrice"),
+        "open_price": _get_raw_option_value(raw, "openPrice"),
+        "high_price": _get_raw_option_value(raw, "highPrice"),
+        "low_price": _get_raw_option_value(raw, "lowPrice"),
+        "last_price": _get_raw_option_value(raw, "lastPrice"),
+        "moneyness": _get_raw_option_value(raw, "moneyness"),
+        "bid_price": _get_raw_option_value(raw, "bidPrice"),
+        "midpoint": _get_raw_option_value(raw, "midpoint"),
+        "ask_price": _get_raw_option_value(raw, "askPrice"),
+        "volume": _get_raw_option_value(raw, "volume"),
+        "open_interest": _get_raw_option_value(raw, "openInterest"),
+        "volatility": _get_raw_option_value(raw, "volatility"),
         "expiration_date": expiration_date,
-        "expiration_type": raw.expirationType,
-        "average_volatility": raw.averageVolatility,
-        "delta": raw.delta,
-        "theta": raw.theta,
-        "gamma": raw.gamma,
-        "vega": raw.vega,
-        "rho": raw.rho,
+        "expiration_type": _get_raw_option_value(raw, "expirationType"),
+        "average_volatility": _get_raw_option_value(raw, "averageVolatility"),
+        "delta": _get_raw_option_value(raw, "delta"),
+        "theta": _get_raw_option_value(raw, "theta"),
+        "gamma": _get_raw_option_value(raw, "gamma"),
+        "vega": _get_raw_option_value(raw, "vega"),
+        "rho": _get_raw_option_value(raw, "rho"),
     }
 
 

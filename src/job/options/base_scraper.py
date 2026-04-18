@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from market_data_library.core.tradfi.api import BarchartAPI
 from market_data_library.core.tradfi.barchart.options.options import OptionService
 from market_data_library.core.tradfi.barchart.type.barchart_type import (
     OptionsExpiration,
@@ -28,11 +27,11 @@ class BaseScraper(ABC):
             return
 
         res = await StockTicker.select(StockTicker.symbol)
-        self.symbols_to_scrape = list(map(lambda r: r["symbol"], res))
+        self.symbols_to_scrape = [row["symbol"] for row in res]
 
     def get_options_api(self) -> OptionService:
         if self.options_api is None:
-            self.options_api = BarchartAPI().barchart_options
+            self.options_api = OptionService()
         return self.options_api
 
     async def cleanup_options_api(self) -> None:

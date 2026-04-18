@@ -1,45 +1,44 @@
 import asyncio
 import datetime
+import time
 from typing import Any
 
-import time
+from asyncio_tools import GatheredResults, gather
 from zoneinfo import ZoneInfo
-from asyncio_tools import gather, GatheredResults
 
 from market_data_piccolo.tables.option_price import OptionPrice
-from src.market_data_library_adapter import (
-    option_price_to_db_row,
-    prepare_expiration_batches,
-)
 from src.job.options.base_scraper import BaseScraper, Result
 from src.job.scrape_generic_util import (
     random_sleep,
     start_postgres_connection_pool,
     stop_postgres_connection_pool,
 )
+from src.market_data_library_adapter import (
+    option_price_to_db_row,
+    prepare_expiration_batches,
+)
+from src.utils.date_util import get_most_recent_trading_day
 
 ny_tz = ZoneInfo("America/New_York")
 
+
+def get_default_trade_time(
+    reference_datetime: datetime.datetime | None = None,
+) -> datetime.datetime:
+    """Return the canonical 9:30 a.m. NY trade-time anchor for this scraper."""
+    return get_most_recent_trading_day(reference_datetime).replace(
+        hour=9,
+        minute=30,
+        second=0,
+        microsecond=0,
+    )
+
+
 class Scraper(BaseScraper):
     async def run(self):
-        now = datetime.datetime.now()
-        ny_now = now.astimezone(tz=ny_tz)
         start_time = time.time()
 
-        # Get the latest trading day in NY timezone
-        # Adjust for weekends
-        # TODO: Account for holidays?
-        # 0 = monday, 6 = sunday
-        default_trade_time = ny_now
-        if ny_now.weekday() >= 5:
-            days_to_deduct = ny_now.weekday() - 4
-            default_trade_time = default_trade_time - datetime.timedelta(days=days_to_deduct)
-        # Check whether market has opened. If not, minus 1 day
-        if default_trade_time.hour < 9 or (default_trade_time.hour == 9 and default_trade_time.minute < 30):
-            default_trade_time = default_trade_time - datetime.timedelta(days=1)
-
-        # market hours: 9.30am - 4pm
-        default_trade_time = default_trade_time.replace(hour=9, minute=30, second=0, microsecond=0)
+        default_trade_time = get_default_trade_time()
 
         await start_postgres_connection_pool()
         try:
@@ -47,12 +46,16 @@ class Scraper(BaseScraper):
             print(f'{len(self.symbols_to_scrape)} symbols to scrape: {self.symbols_to_scrape}, default trade time: {default_trade_time}')
             for symbol in self.symbols_to_scrape:
                 try:
-                    inserted = await self.scrape_ticker(symbol=symbol, tz=ny_tz)
+                    inserted = await self.scrape_ticker(
+                        symbol=symbol,
+                        tz=ny_tz,
+                        default_trade_time=default_trade_time,
+                    )
                     # TODO: post check
                     print(f"inserted data for {symbol} into DB?:", inserted)
                 except Exception as e:
                     print(f"[run] error: {e}")
-                    raise e
+                    raise
                     # TODO: send telegram notification
 
             # TODO: send email/telegram notification
@@ -64,7 +67,12 @@ class Scraper(BaseScraper):
         end_time = time.time()
         print(f'Took {end_time - start_time} seconds')
 
-    async def scrape_ticker(self, symbol: str, tz: Any) -> bool:
+    async def scrape_ticker(
+        self,
+        symbol: str,
+        tz: Any,
+        default_trade_time: datetime.datetime,
+    ) -> bool:
         # TODO: should probably ignore strike prices that are more than a certain number outside
         # of the current stock price(e.g. 20%)
         start_time = time.time()
@@ -93,7 +101,13 @@ class Scraper(BaseScraper):
                 self.result.increase_fetch_count_for_symbol(symbol, fetch_count)
 
                 for option_data in options_res:
-                    option_price = OptionPrice(option_price_to_db_row(option_data, tz=tz))
+                    option_price = OptionPrice(
+                        option_price_to_db_row(
+                            option_data,
+                            tz=tz,
+                            default_trade_time=default_trade_time,
+                        )
+                    )
                     option_price_to_insert.append(OptionPrice.insert(option_price))
                 try:
                     if len(option_price_to_insert) > 0:
@@ -106,13 +120,14 @@ class Scraper(BaseScraper):
                             print(f'[scrape_ticker] There are {gathered_result.exception_count} insert DB errors:', gathered_result.exceptions)
                 except Exception as e:
                     print(f'[scrape_ticker] error: {e}')
-                    raise RuntimeError(e)
+                    raise RuntimeError(e) from e
                 await random_sleep(0.1)
             await random_sleep(1)
         await random_sleep(3)
         end_time = time.time()
         self.result.set_symbol_fetch_time_for_symbol(symbol, end_time - start_time)
         return True if self.result.db_insert_count > before_db_insert_count else False
+
 
 async def main():
     scraper = Scraper(result=Result())
