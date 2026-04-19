@@ -26,9 +26,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev-local
-      additional_contexts:
-        market_data_library: ../market-data-library
+      target: dev-git
+      secrets:
+        - source: github_token
+          mode: 0600
     image: market-data:migrate
     container_name: migrate
     # Run schema setup once per compose startup; backend won't start unless this succeeds.
@@ -45,17 +46,25 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
     volumes:
       - .:/app
-      - ../market-data-library:/opt/market-data-library
+      # Uncomment to make the migration container import the sibling
+      # `market-data-library/` checkout instead of the git-pinned package that
+      # was installed into the image during `poetry install`.
+      # - ../market-data-library:/app/market-data-library-local:ro
+    # Uncomment this together with the bind mount above to mirror
+    # `bash scripts/use_local_market_data_library.sh` inside Docker:
+    # environment:
+    #   PYTHONPATH: "/app/market-data-library-local:/app"
     restart: "no"
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev-local
-      additional_contexts:
-        market_data_library: ../market-data-library
-    image: market-data:dev-local
+      target: dev-git
+      secrets:
+        - source: github_token
+          mode: 0600
+    image: market-data:dev-git
     container_name: backend
     command: uvicorn --reload --app-dir src/server --host 0.0.0.0 main:app
     depends_on:
@@ -73,9 +82,20 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
     volumes:
       - .:/app
-      - ../market-data-library:/opt/market-data-library
+      # Uncomment to make the backend container import the sibling
+      # `market-data-library/` checkout instead of the git-pinned package that
+      # was installed into the image during `poetry install`.
+      # - ../market-data-library:/app/market-data-library-local:ro
+    # Uncomment this together with the bind mount above to mirror
+    # `bash scripts/use_local_market_data_library.sh` inside Docker:
+    # environment:
+    #   PYTHONPATH: "/app/market-data-library-local:/app"
     ports:
       - 8000:8000
 
 volumes:
   db-volume:
+
+secrets:
+  github_token:
+    file: secret/github_token

@@ -11,18 +11,24 @@ There are 2 parts to the project:
 
 # Set up
 * Install [Python 3.12](https://www.python.org/downloads/)
-  * Supported local interpreter range is `>=3.12,<3.14`
-  * Python 3.14 is currently not supported because `asyncpg==0.29.0` does not build cleanly there
+  * Supported local interpreter range is `>=3.12,<3.13`
+  * Python 3.13+ is currently not supported because the released `market-data-library` dependency is pinned to Python 3.12 and `asyncpg==0.29.0` does not build cleanly on Python 3.14
 * Copy environment template: `cp .env.example .env`
 * Configure database settings in `.env`
 * Install dependencies with Poetry: `poetry install --no-root`
-  * `market-data-library` is resolved from the sibling directory `../market-data-library`
+  * `market-data-library` is installed from `git@github.com:hanchiang/market_data_api.git` at tag `1.5.0`
+* Confirm which `market-data-library` source the repo currently imports:
+  * `bash scripts/show_market_data_library_source.sh`
+* Switch to the sibling workspace checkout when you need unpublished local library changes:
+  * `bash scripts/use_local_market_data_library.sh`
+* Switch back to the released Git dependency:
+  * `bash scripts/use_git_market_data_library.sh`
 * Set PYTHONPATH: `export PYTHONPATH=$(pwd)`
 * Run migrations before starting the app: `poetry run piccolo migrations forwards market_data_piccolo --trace`
 * Start server: `poetry run uvicorn --reload --app-dir src/server main:app`
   * Server runs at: `localhost:8000`
   * API documentation runs at: `localhost:8000/docs`, `localhost:8000/redoc`.
-* Legacy setup still exists for Docker and `requirements.txt`, but the tracked local development path is Poetry plus the sibling `market-data-library` repo.
+* Docker builds install from the same locked Poetry dependency graph as local development.
 * Before using the API or scrapers, ensure Postgres is reachable and Piccolo migrations have already been applied with the configured credentials.
 
 # Run Modes
@@ -36,16 +42,28 @@ There are 2 parts to the project:
   * Use the compose workflow in the Docker section below
 
 # Docker
+* Before any Docker build that needs `market-data-library`, create the build secret used by Dockerfiles:
+  * `mkdir -p secret`
+  * `printf '%s' "$GITHUB_TOKEN_WITH_REPO_ACCESS" > secret/github_token`
+* Future CI note:
+  * when this repo adds CI or CD workflows that need to install the private `market-data-library` dependency, mirror the backend repo pattern instead of hard-coding a personal token
+  * provide GitHub App credentials such as `MARKET_DATA_LIBRARY_GITHUB_APP_ID` and `MARKET_DATA_LIBRARY_GITHUB_APP_PRIVATE_KEY`
+  * mint a short-lived installation token in CI, then use that token for `poetry install` and any Docker `secret/github_token` build-secret step
 * You can also start the full stack with `docker compose up -d`
   * Compose will start `db`, run the one-shot `migrate` service, then start `backend`
-* Default local compose path uses the sibling `../market-data-library` repo:
+* Default local compose path uses the released git-tagged `market-data-library` package via the locked Poetry dependency graph:
+  * `mkdir -p secret`
+  * `printf '%s' "$GITHUB_TOKEN_WITH_REPO_ACCESS" > secret/github_token`
   * `docker compose up -d db`
   * `docker compose run --rm migrate`
   * `docker compose up backend`
   * Inside compose, the backend and migration service connect to Postgres with `POSTGRES_HOST=db`
-* For consumer-style testing against a git-installed `market-data-library`, build the alternate target:
-  * `DOCKER_BUILDKIT=1 docker build --target dev-git --ssh default --build-arg MARKET_DATA_LIBRARY_REF=1.0.0 -t market-data:dev-git .`
-  * This Git validation path requires SSH access to the private GitHub repository.
+* To make the container import the sibling workspace checkout instead, uncomment the documented `../market-data-library` bind mount plus `PYTHONPATH` override in [docker-compose.yml](docker-compose.yml) before recreating the backend container.
+* To build the git-backed dev image directly:
+  * `mkdir -p secret`
+  * `printf '%s' "$GITHUB_TOKEN_WITH_REPO_ACCESS" > secret/github_token`
+  * `docker build --secret id=github_token,src=secret/github_token --target dev-git -t market-data:dev-git .`
+  * This validation path requires a GitHub token with access to the private repository.
 
 # Operations
 * Piccolo migration status check:
