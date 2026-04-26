@@ -33,6 +33,7 @@ cffi_bin
 
 # Pyenv Stuff
 .python-version
+.venv
 venv
 .env
 
