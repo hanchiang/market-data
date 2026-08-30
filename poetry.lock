@@ -835,28 +835,28 @@ files = [
 
 [[package]]
 name = "market-data-library"
-version = "0.1.0"
-description = ""
+version = "1.8.0"
+description = "Unified, type-safe access to stocks and cryptocurrency market data providers."
 optional = false
-python-versions = ">=3.12,<3.13"
+python-versions = ">=3.12"
 groups = ["main"]
 files = []
 develop = false
 
 [package.dependencies]
-aiohttp = "^3.8.4"
-chromedriver-autoinstaller = "^0.6.2"
-dacite = "^1.8.1"
-exchange-calendars = "^4.13.2"
-selenium = "^4.11.2"
-selenium-stealth = "^1.0.6"
-tenacity = "^9.1.2"
+aiohttp = ">=3.8.4,<4"
+chromedriver-autoinstaller = ">=0.6.2,<0.7"
+dacite = ">=1.8.1,<2"
+exchange-calendars = ">=4.13.2,<5"
+selenium = ">=4.11.2,<5"
+selenium-stealth = ">=1.0.6,<2"
+tenacity = ">=9.1.2,<10"
 
 [package.source]
 type = "git"
 url = "ssh://git@github.com/hanchiang/market_data_api.git"
-reference = "1.5.0"
-resolved_reference = "6c20642998e80f440ba67c51d8e65f0488ed5f61"
+reference = "1.8.0"
+resolved_reference = "1ddf93c37974166e393bde027d8c2fd4da13fb41"
 
 [[package]]
 name = "markupsafe"
@@ -2132,4 +2132,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.13"
-content-hash = "6b96ef7c631a48e6f5b56897d6ff321645aa1694688b2757f4bac8dc2b23d9c5"
+content-hash = "bf14db1a7d5f8b941acc5fb845a34c4614a051c86da45a22ecae28bd1cc5476f"
