@@ -1,3 +1,5 @@
+
+
 # Introduction
 This project is a API service that retrieves options data for a ticker and an expiration date.  
 There are 2 parts to the project:
@@ -16,7 +18,7 @@ There are 2 parts to the project:
 * Copy environment template: `cp .env.example .env`
 * Configure database settings in `.env`
 * Install dependencies with Poetry: `poetry install --no-root`
-  * `market-data-library` is installed from `git@github.com:hanchiang/market_data_api.git` at tag `1.5.0`
+  * `market-data-library` is installed from `git@github.com:hanchiang/market_data_api.git` at tag `1.8.0`
 * Confirm which `market-data-library` source the repo currently imports:
   * `bash scripts/show_market_data_library_source.sh`
 * Switch to the sibling workspace checkout when you need unpublished local library changes:
@@ -167,7 +169,7 @@ Store snapshot of options price for a stock ticker, expiration date, strike pric
 * rho - decimal
 
 ## Most active options table
-Store ticker that have the most options activity(open interest, volume, IV)
+Store ticker that have the most options activity(open interest, volume, volume, IV)
 * id(PK) - big serial
 * symbol - varchar
 * last_price - decimal
