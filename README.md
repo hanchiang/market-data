@@ -16,7 +16,7 @@ There are 2 parts to the project:
 * Copy environment template: `cp .env.example .env`
 * Configure database settings in `.env`
 * Install dependencies with Poetry: `poetry install --no-root`
-  * `market-data-library` is installed from `git@github.com:hanchiang/market_data_api.git` at tag `1.5.0`
+  * `market-data-library` is installed from `git@github.com:hanchiang/market_data_api.git` at the tag pinned in [pyproject.toml](pyproject.toml) (`rev`)
 * Confirm which `market-data-library` source the repo currently imports:
   * `bash scripts/show_market_data_library_source.sh`
 * Switch to the sibling workspace checkout when you need unpublished local library changes:
